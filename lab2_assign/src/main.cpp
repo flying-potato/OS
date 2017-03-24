@@ -148,12 +148,12 @@ void simulation(PrioSched& schedref){
 		evtProc->curState = evt->newstate ; //process's new state
 		evtProc->state_ts = CURRENT_TIME ; //update state_ts
 
-        cout<<CURRENT_TIME<<" "<<evtProc->pid<<" "<< span<<" "<<": "<<STA[evt->oldstate] <<" -> "<<STA[evt->newstate];
+        cout<<CURRENT_TIME<<" "<<evtProc->pid<<" "<< span<<": "<<STA[evt->oldstate] <<" -> "<<STA[evt->newstate];
 
         switch(evt->transition){
 			//tell which old state come from
 case TRANS_TO_READY: 	 //come from blocked, need new cb
-            evtProc->printProc() ;
+            // evtProc->printProc() ;
             evtProc->need_new_cb = true;
             evtProc->priority = evtProc->static_priority - 1; //reset to highest dyn
             cout<<endl;
@@ -174,7 +174,7 @@ case TRANS_TO_READY: 	 //come from blocked, need new cb
             }*/
             
             schedref.run_queue.push(evtProc) ; //add process to run_queue
-            cout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
+            // cout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
             CALL_SCHED = true; //conditional on whether something is run
             break;
 
@@ -231,7 +231,7 @@ case TRANS_TO_PREEMPT:
              //keep running with old priority, at end priority--
             evtProc->need_new_cb = false; //no need to create new cb
             evtProc->cb -= quant;	
-            cout <<" cb="<< evtProc->cb;
+            cout <<"  cb="<< evtProc->cb;
                 // if rem < quantum ???, process at trans_to_run
 
             evtProc->rem -= quant ; 	

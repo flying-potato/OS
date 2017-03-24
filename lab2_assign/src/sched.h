@@ -15,11 +15,7 @@ struct mycmpProcess
 {
 
     bool operator () ( Process* process1,  Process* process2) {
-/*        if (process1->priority == process2->priority)
-        {
-            return 
-        }
-*/        return process1->priority < process2->priority; //big first 
+       return process1->priority < process2->priority; //big first 
     }
 
 };
@@ -30,7 +26,6 @@ class PrioSched{
     int quantum = 2;
     priority_queue<Process*, vector<Process*>, mycmpProcess> run_queue; //all ready state process here
     priority_queue<Process*, vector<Process*>, mycmpProcess> run_queue_expired; 
-
     PrioSched(){}
 
     void add_process(Process * proc){
@@ -44,7 +39,7 @@ class PrioSched{
         }
         Process* topproc = run_queue.top(); 
         run_queue.pop(); 
-        cout<<"getting:" <<topproc->pid <<";top: "<<run_queue.top()->pid <<endl;
+        // cout<<"getting:" <<topproc->pid <<";top: "<<run_queue.top()->pid <<endl;
 
         return topproc ;
     }
