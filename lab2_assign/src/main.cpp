@@ -8,6 +8,7 @@
 #include <cctype>
 #include <iomanip>
 #include <iostream>
+#include <map>
 
 #include "event.h"
 #include "process.h"
@@ -16,19 +17,31 @@
 using namespace std;
 struct mycmp
 {
-
-    bool operator () ( Event* evt1,  Event* evt2) {
+    //big value in < expression pop out first
+    bool operator () ( Event* evt1,  Event* evt2) { //similar to reload <
+        if(evt1->evtTimeStamp == evt2->evtTimeStamp){
+            return evt1->genTimeStamp > evt2->genTimeStamp;
+        }
         return evt1->evtTimeStamp > evt2->evtTimeStamp; //small ahead of big
     }
 
 };
-
-
-int CURRENT_TIME = 1;
+struct mycmpfinish
+{
+    //big value in < expression pop out first
+    bool operator () ( Process* proc1,  Process* proc2) { //similar to reload <
+        return proc1->pid > proc2->pid; //small ahead of big
+    }
+};
+int quant;
+int CURRENT_TIME = 0;
+int PROC_NUM = 0;
 bool CALL_SCHED = false;
 Process * CURRENT_RUNNING_PROCESS = NULL;
-
+bool if_IO=false; 
+int BLOCK_START=0, BLOCK_END=0, IO_TIME=0;
 vector<int> rand;
+priority_queue<Process*, vector<Process*>, mycmpfinish> finish_queue;
 priority_queue<Event*, vector<Event*> , mycmp>  eventqueue; //time ordered 
 // priority_queue<Event*>  eventqueue; //time ordered 
 // queue<Event*> eventqueue ; 
@@ -80,13 +93,36 @@ void printEventQueue(){
 
 
 int main( int argc, char* argv[] ){
+/*    int vflag = 0;
+    char* sched_option = NULL;
+    char* infile_name = NULL;
+    char* randfile_name = NULL;
+
+    while((tmp=getopt(argc,argv,"vs:"))!=-1)
+    {
+        switch(tmp){
+        case 'v':
+            vflag = 1 ;
+            break;
+
+        case 's':
+            sval = optarg;
+            break; 
+        }
+    }
+    if (optind < argc){
+        infile_name = argv[optind];
+        optind++;
+        randfile_name = argv[optind];
+    }   */
+
+    //read option and filename
     ifstream infile, rfile;
-    int fileindex = 0;
-    // infile.open(argv[fileindex + 1]);
-    // rfile.open(argv[fileindex + 2]);
-    infile.open("../input2");
+    infile.open("../input1"); //input#
     rfile.open("../rfile") ;
-    //random file reading
+/*    infile.open(infile_name);
+    infile.open(randfile_name);
+*/    //random file reading
     int numinline, randcount;
     rfile>>randcount;      
     while(rfile>>numinline){ 
@@ -113,12 +149,9 @@ int main( int argc, char* argv[] ){
 
         Process *p = new Process(pid, arr_time, totalcpu, CB, IO, CREATED, randomBurst(PRIO));
         //static priority is  %PRIO+1, dynamic priority initialized from static-1
-        // schedref.add_process(p);
-        // cout<<"new Process addr: "<<p<<" "<<endl;
-        Event* e = new Event(arr_time, CREATED,READY, TRANS_TO_READY, p );
-        // cout<<"new Event addr: "<<e<<" "<<endl;
-        eventqueue.push(e);
+        Event* e = new Event(arr_time,arr_time, CREATED,READY, TRANS_TO_READY, p );
 
+        eventqueue.push(e);
         pid ++; //next process
     }
     // test part
@@ -135,7 +168,7 @@ int main( int argc, char* argv[] ){
 
 
 void simulation(PrioSched& schedref){
-	int quant = schedref.quantum;
+	quant = schedref.quantum;
     int cb;
     Event* evt;
 	while (get_event(evt)){ //reference argument
@@ -144,6 +177,7 @@ void simulation(PrioSched& schedref){
 		Process* & evtProc = evt->evtProcess;
         evtProc->timeInPrevState=CURRENT_TIME - evtProc->state_ts;
 		int span = evtProc->timeInPrevState ; 
+        if(evt->oldstate == READY) {evtProc->CW += span;} //cpu waiting time
         // evtProc->prevState = evtProc->curState; 
 		evtProc->curState = evt->newstate ; //process's new state
 		evtProc->state_ts = CURRENT_TIME ; //update state_ts
@@ -152,27 +186,20 @@ void simulation(PrioSched& schedref){
 
         switch(evt->transition){
 			//tell which old state come from
-case TRANS_TO_READY: 	 //come from blocked, need new cb
+case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or 
+//RUNNING to READY TRANS_TO_PREEMPT
             // evtProc->printProc() ;
-            evtProc->need_new_cb = true;
-            evtProc->priority = evtProc->static_priority - 1; //reset to highest dyn
-            cout<<endl;
-            // CREATED ->READY or BLOCK->READY
-            /*	
-            else{
-                // Running to Ready : preemption, running finish so cb is the remain time
-                if(evt->oldstate == RUNNG){ //keep running with old priority, at end priority--
-                    evtProc->cb -= quant;	cout <<" cb="<< evtProc->cb;
-                        // if rem < quantum ???, process at trans_to_run
-                    evtProc->rem -= quant ; 	cout <<" rem="<< evtProc->rem <<endl;	
-                    evtProc->priority --; 	cout<<" prio=" << evtProc->priority;
-                    schedref.run_queue.push(evtProc) ; 
-                // Blocked to Ready, when blocked, no cb or rem changed
-                }else{
-                    schedref.run_queue.push(evtProc) ; 
-                }
-            }*/
-            
+            if(evt->oldstate == CREATED) {
+                // cout<<" prio="<<evtProc->priority;
+                evtProc->need_new_cb = true;
+                PROC_NUM ++;
+            }
+            else{ //BLOCKED
+                evtProc->priority = evtProc->static_priority - 1; //reset to highest dyn
+                evtProc->need_new_cb = true;
+            }
+            evtProc->enter_run_queue_time = CURRENT_TIME;      
+            cout<<" rdy:"<<evtProc->enter_run_queue_time<<endl;   
             schedref.run_queue.push(evtProc) ; //add process to run_queue
             // cout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
             CALL_SCHED = true; //conditional on whether something is run
@@ -183,16 +210,23 @@ case TRANS_TO_READY: 	 //come from blocked, need new cb
 case TRANS_TO_RUN: 
         //ready -> run //when it has cb from preemption
             // no need to create new cb
+
             if (evtProc->need_new_cb){
                 cb = randomBurst( evtProc->CB);
             }else{ 
                 cb = evtProc->cb; // no need for new cb
             }
 
-            if (evtProc->rem <= quant && cb > evtProc->rem) { //****last run 
+            if (evtProc->rem <= quant && cb >= evtProc->rem) { //****last run 
                 cb = evtProc->rem;
                 cout <<" cb="<<cb<<" rem="<< evtProc->rem  <<" prio="<< evtProc->priority <<endl;
-                cout << CURRENT_TIME+cb<< " " << evtProc->pid << " "<<cb<<": Done"<<endl;
+                int FT = CURRENT_TIME+cb;
+                evtProc->state_ts = FT;
+                cout << FT<< " " << evtProc->pid << " "<<cb<<": Done"<<endl;
+                evtProc->finish(FT);
+                finish_queue.push(evtProc) ; // finish proc
+
+                CURRENT_TIME = FT;
                 CURRENT_RUNNING_PROCESS = NULL;
                 CALL_SCHED = true;// WHEN DONE, need CALL SCHED
                 break;
@@ -203,22 +237,41 @@ case TRANS_TO_RUN:
             //begin to run then create event at the end of running, add to eventqueue
             if (cb <= quant){ // keep prio, go to block 
             //evt_ts is at the end of running, namely the next transition
-                ee = new  Event(CURRENT_TIME+cb, RUNNG, BLOCK, TRANS_TO_BLOCK, evtProc);
+                evtProc->need_new_cb = true;
+                ee = new Event(CURRENT_TIME+cb, CURRENT_TIME, RUNNG, BLOCK, TRANS_TO_BLOCK, evtProc);
             }else{ //go to ready, decrease priority by 1 after running
                 //only know RUNNING to READY, when it TRANS_TO_READY calculate the rem and remaning cb, decrease prio
-                ee = new Event(CURRENT_TIME+quant, RUNNG, READY, TRANS_TO_PREEMPT, evtProc);
+                ee = new Event(CURRENT_TIME+quant, CURRENT_TIME, RUNNG, READY, TRANS_TO_PREEMPT, evtProc);
             }
             eventqueue.push(ee) ;
             break;
 
 case TRANS_TO_BLOCK:
             //RUNNING-> BLOCKED, cb must small than quant, make cb become -1
+            
             CURRENT_RUNNING_PROCESS = NULL ; //running ended
             evtProc->rem -= evtProc->cb; //related with running time, cb<=quantum
             evtProc->ib = randomBurst(evtProc->IO) ;
             //create an event for when process becomes READY again
             cout<<" ib="<< evtProc->ib <<" rem="<<evtProc->rem<<endl;
-            ee = new  Event(CURRENT_TIME+evtProc->ib, BLOCK, READY, TRANS_TO_READY, evtProc);
+            evtProc->IT += evtProc->ib;
+            ee = new  Event(CURRENT_TIME+evtProc->ib, CURRENT_TIME, BLOCK, READY, TRANS_TO_READY, evtProc);
+
+            if(if_IO == false || CURRENT_TIME >= BLOCK_END){ //easy just plus the ib
+                if_IO = true;
+                IO_TIME += evtProc->ib;
+                BLOCK_START = CURRENT_TIME;
+                BLOCK_END = CURRENT_TIME + evtProc->ib ;
+            }else{
+                if(CURRENT_TIME+ evtProc->ib <= BLOCK_END){}
+                else{
+                    int extra_IO =  CURRENT_TIME+ evtProc->ib - BLOCK_END;
+                    IO_TIME += extra_IO ;
+                    BLOCK_START = CURRENT_TIME;
+                    BLOCK_END = CURRENT_TIME+ evtProc->ib ;
+                }
+            }
+
             eventqueue.push(ee) ;
             CALL_SCHED = true;
             break;
@@ -238,9 +291,15 @@ case TRANS_TO_PREEMPT:
             cout <<" rem="<< evtProc->rem;	
 
             cout<<" prio=" << evtProc->priority<<endl;
-            evtProc->reset_priority() ; // -- operation
-            //first print then cout prio
-            schedref.run_queue.push(evtProc) ; 
+
+            evtProc->enter_run_queue_time = CURRENT_TIME; 
+            schedref.dec_and_reset(evtProc);
+/*            evtProc->priority --;
+            if(evtProc->priority == -1){
+                evtProc->priority = evtProc->static_priority - 1;// reset it and push to expired
+                schedref.run_queue_expired.push(evtProc) ; 
+            }
+            else{ schedref.run_queue.push(evtProc) ; }*/
             // Blocked to Ready, when blocked, no cb or rem changed
 
             
@@ -254,7 +313,6 @@ case TRANS_TO_PREEMPT:
         // cout<<"eventqueue size: "<<eventqueue.size()<<endl;
 		if(CALL_SCHED){
 			if( get_next_event_time() == CURRENT_TIME ){
-
 				continue;
 			}
 			CALL_SCHED = false;
@@ -263,7 +321,7 @@ case TRANS_TO_PREEMPT:
 				CURRENT_RUNNING_PROCESS = schedref.get_next_process();
 				if(CURRENT_RUNNING_PROCESS == NULL){ continue ;}
                 else{
-                    Event* run_event = new Event(CURRENT_TIME, READY, RUNNG, TRANS_TO_RUN, CURRENT_RUNNING_PROCESS) ;
+                    Event* run_event = new Event(CURRENT_TIME, CURRENT_TIME, READY, RUNNG, TRANS_TO_RUN, CURRENT_RUNNING_PROCESS) ;
                     eventqueue.push(run_event) ;
                 }
 			}
@@ -271,4 +329,32 @@ case TRANS_TO_PREEMPT:
 
 		}
 	}//while loop
+    int last_FT = -1;
+    double cpu_util, io_util, total_CPU, throughput, av_tt, av_cw;
+    cout<<schedref.mode<<" "<<quant<<endl;
+    while (!finish_queue.empty())
+    {
+        Process &pt = *finish_queue.top();
+        printf("%04d: %4d %4d %4d %4d %1d | %5d %5d %5d %5d\n",
+            pt.pid,
+            pt.arrival, pt.totalcpu, pt.CB, pt.IO, pt.static_priority,
+            pt.state_ts, // last time stamp
+            pt.TT,
+            pt.IT,
+            pt.CW); 
+        last_FT = max(last_FT, pt.FT) ;
+        total_CPU += pt.totalcpu;
+        av_tt += pt.TT ;
+        av_cw += pt.CW ;
+        finish_queue.pop();
+    }
+    cpu_util = total_CPU/last_FT *100;
+    // cout<<"IO_TIME:"<<IO_TIME<<endl;
+    io_util = double(IO_TIME* 100.0 / last_FT  ) ;
+    throughput = (PROC_NUM*100.0)/last_FT ;
+    av_tt  /= PROC_NUM ;
+    av_cw  /= PROC_NUM ;
+    printf("SUM: %d %.2lf %.2lf %.2lf %.2lf %.3lf\n",
+        last_FT, cpu_util , io_util, av_tt, av_cw, throughput);
+
 }

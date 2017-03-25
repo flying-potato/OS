@@ -10,7 +10,8 @@ using namespace std;
 class Process{
  
     public:
-        int pid, totalcpu, CB, IO ;
+        int pid, totalcpu, CB, IO, arrival;
+        int enter_run_queue_time;
         int cb, ib;
         int rem;
         int priority, static_priority;
@@ -18,23 +19,21 @@ class Process{
         STATE curState, prevState;
         int state_ts; // curState beginning timestamp
         int timeInPrevState; 
+
+        int FT, TT, IT, CW;
+
         Process(){}
 /*
 Process* pp = new Process(99, 9,9,9, Done, 3);
 */		Process(int pid, int state_ts, int totalcpu, int CB, int IO, STATE cur, int static_priority )
 		:pid(pid),state_ts(state_ts), totalcpu(totalcpu), CB(CB), IO(IO) , curState(cur), static_priority(static_priority)
 		{
+            arrival = state_ts; IT=0; CW=0 ; //initialize IO Time, arrival time
             rem = totalcpu; //initialzed process rem
             priority = static_priority - 1;
             need_new_cb = true;
 		}
-        void reset_priority(){
-            priority --;
-            if(priority == -1){
-                priority = static_priority - 1;// reset it
-            }
-                       
-        }
+      
         void printProc(){
             cout<<" cb="<<cb;
             cout<<" rem="<<rem; 
@@ -43,6 +42,11 @@ Process* pp = new Process(99, 9,9,9, Done, 3);
 
             // cout<<endl;
         }
+        void finish(int FTT){
+            FT = FTT;
+            TT = FT - arrival ; //from arrival to end
+        }
+
 };
 
 #endif
