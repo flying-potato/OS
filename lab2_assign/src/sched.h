@@ -15,24 +15,41 @@
 struct mycmpProcess
 {
 
-    bool operator () ( Process* process1,  Process* process2) {
-        if( process1->priority == process2->priority)
-        {
-            return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
-        }
-            return process1->priority < process2->priority; //big first 
-    }    
-    
     // bool operator () ( Process* process1,  Process* process2) {
     //     if( process1->priority == process2->priority)
     //     {
-    //         if(process1->enter_run_queue_time == process2->enter_run_queue_time){
-    //             return  process1->pid > process2->pid;
-    //         }
     //         return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
     //     }
-    //     return process1->priority < process2->priority; //big first 
-    // }
+    //         return process1->priority < process2->priority; //big first 
+    // }    
+    
+    bool operator () ( Process* process1,  Process* process2) {
+        if( process1->priority == process2->priority)
+        {
+            if(process1->enter_run_queue_time == process2->enter_run_queue_time){
+            
+            if( process1->prevState==CREATED &&process2->prevState==CREATED){
+                return  process1->pid > process2->pid;
+            }else if (process1->prevState==CREATED ||process2->prevState==CREATED){
+                if(process1->prevState==CREATED&&process2->prevState!=CREATED)
+                {
+                    process2->rawtime += 100;
+                }
+                if( process1->prevState!=CREATED&&process2->prevState==CREATED )
+                {
+                    process1->rawtime += 100;
+                }
+                return  process1->rawtime > process2->rawtime;
+            }
+            // else{
+            //     return process1->prevstate_ts > process2->prevstate_ts;
+            // }
+
+            }
+            return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
+        }
+        return process1->priority < process2->priority; //big first 
+    }
 
 };
 class Scheduler{

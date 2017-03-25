@@ -18,7 +18,9 @@ class Process{
         int priority, static_priority;
         bool need_new_cb ;
         STATE curState, prevState;
+
         int state_ts; // curState beginning timestamp
+        int prevstate_ts;
         int timeInPrevState; 
 
         int FT, TT, IT, CW;
@@ -33,6 +35,9 @@ Process* pp = new Process(99, 9,9,9, Done, 3);
             rem = totalcpu; //initialzed process rem
             priority = static_priority - 1;
             need_new_cb = true;
+
+            prevstate_ts = 0;
+
 time ( &rawtime );  
 		}
       

@@ -202,14 +202,15 @@ void simulation(Scheduler& schedref, int vflag){
 	quant = schedref.get_quantum();
     int cb;
     Event* evt;
+    int span;
 	while (get_event(evt)){ //reference argument
         // fcout<<"event timestam: "<<evt->evtTimeStamp<<endl;;
         CURRENT_TIME = evt->evtTimeStamp ; //change moment
 		Process* & evtProc = evt->evtProcess;
         evtProc->timeInPrevState=CURRENT_TIME - evtProc->state_ts;
-		int span = evtProc->timeInPrevState ; 
+		span = evtProc->timeInPrevState ; 
         if(evt->oldstate == READY) {evtProc->CW += span;} //cpu waiting time
-        // evtProc->prevState = evtProc->curState; 
+        evtProc->prevState = evtProc->curState; 
 		evtProc->curState = evt->newstate ; //process's new state
 		evtProc->state_ts = CURRENT_TIME ; //update state_ts
 
@@ -228,7 +229,7 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
             if(evt->oldstate == CREATED) {
                 // fcout<<" prio="<<evtProc->priority;
                 evtProc->need_new_cb = true;
-                fcout<< " rem="<<evtProc->rem ;
+                // fcout<< " rem="<<evtProc->rem ;
                 PROC_NUM ++;
             }
             else{ //BLOCKED
