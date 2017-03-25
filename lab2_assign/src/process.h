@@ -1,5 +1,6 @@
 #ifndef __PROCESS__
 #define __PROCESS__
+#include <time.h>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -21,7 +22,7 @@ class Process{
         int timeInPrevState; 
 
         int FT, TT, IT, CW;
-
+time_t rawtime;
         Process(){}
 /*
 Process* pp = new Process(99, 9,9,9, Done, 3);
@@ -32,6 +33,7 @@ Process* pp = new Process(99, 9,9,9, Done, 3);
             rem = totalcpu; //initialzed process rem
             priority = static_priority - 1;
             need_new_cb = true;
+time ( &rawtime );  
 		}
       
         void printProc(){

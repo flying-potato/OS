@@ -159,7 +159,8 @@ struct cmpFCFS{
     bool operator () ( Process* p1,  Process* p2) {
         if( p1->enter_run_queue_time == p2->enter_run_queue_time)
         {
-            return p1->pid > p2->pid;
+            return p1->rawtime = p2->rawtime;
+            // return p1->pid > p2->pid;
         }
         return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
     }
@@ -189,6 +190,7 @@ class RR:public Scheduler{
     private:
     // priority_queue<Process*, vector<Process*>, cmpFCFS> rq3;
     queue<Process*> rq3;
+    // queue<Process*> rq4;
     public:
     RR(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
     void add_process(Process * proc){
@@ -198,16 +200,18 @@ class RR:public Scheduler{
         if(rq3.empty())
         {
             return NULL;
+            // swap(rq3,rq4) ;
             // if(rq3.empty()) { return NULL;}
         }
-        // Process* topproc = rq3.top(); 
         Process* topproc = rq3.front(); 
+        // Process* topproc = rq3.top(); 
         rq3.pop(); 
         return topproc ;
     }
     void dec_and_reset(Process* proc){
-        rq3.push(proc);
-    } // when it is preempted, no new cpu burst, add to queue
+        rq3.push(proc) ; 
+    }
+     // when it is preempted, no new cpu burst, add to queue
 }; 
 
 #endif

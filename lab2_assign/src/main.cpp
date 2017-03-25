@@ -10,7 +10,7 @@
 #include <iostream>
 #include <map>
 #include <unistd.h>
-
+#include <time.h>
 
 #include "event.h"
 #include "process.h"
@@ -36,7 +36,8 @@ struct mycmp
         if(evt1->evtTimeStamp == evt2->evtTimeStamp){
             if(evt1->genTimeStamp == evt2->genTimeStamp)
             {
-                return evt1->evtProcess->pid > evt2->evtProcess->pid ; 
+                // return evt1->evtProcess->pid > evt2->evtProcess->pid ; 
+                return evt1->rawtime > evt2->rawtime ; 
             }
 
             return evt1->genTimeStamp > evt2->genTimeStamp;
@@ -221,8 +222,7 @@ void simulation(Scheduler& schedref, int vflag){
         switch(evt->transition){
 			//tell which old state come from
 case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or 
-//RUNNING to READY TRANS_TO_PREEMPT
-            // evtProc->printProc() ;
+
             if(evt->oldstate == CREATED) {
                 // fcout<<" prio="<<evtProc->priority;
                 evtProc->need_new_cb = true;
@@ -232,6 +232,7 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
                 evtProc->priority = evtProc->static_priority - 1; //reset to highest dyn
                 evtProc->need_new_cb = true;
             }
+            time  ( &evtProc->rawtime ); 
             evtProc->enter_run_queue_time = CURRENT_TIME;      
             // fcout<<" rdy:"<<evtProc->enter_run_queue_time
             fcout<<endl;   
@@ -337,6 +338,7 @@ case TRANS_TO_PREEMPT:
 
             fcout<<" prio=" << evtProc->priority<<endl;
             evtProc->enter_run_queue_time = CURRENT_TIME; 
+    time  ( &evtProc->rawtime ); 
             schedref.dec_and_reset(evtProc);
 /*            evtProc->priority --;
             if(evtProc->priority == -1){
