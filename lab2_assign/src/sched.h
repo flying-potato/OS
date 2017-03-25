@@ -98,33 +98,7 @@ class PrioSched: public Scheduler{
     }
 
 };
-struct cmpFCFS{
-    bool operator () ( Process* p1,  Process* p2) {
-        if( p1->enter_run_queue_time == p2->enter_run_queue_time)
-        {
-            return p1->pid > p2->pid;
-        }
-        return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
-    }
-};
-class FCFS: public Scheduler{
-    private:
-    priority_queue<Process*, vector<Process*>, cmpFCFS> rq;
-    public:
-    FCFS(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
-    void add_process(Process * proc){
-        rq.push(proc) ;
-    }
-    Process* get_next_process(){
-        if(rq.empty())
-        {
-            return NULL;
-            // if(rq.empty()) { return NULL;}
-        }
-        Process* topproc = rq.top(); 
-        rq.pop(); 
-        return topproc ;
-    }};
+
 class LCFS: public Scheduler{
     private:
     stack<Process*> run_stack ;
@@ -180,9 +154,41 @@ class SJF:public Scheduler{
         return topproc ;
     }
 };
+
+struct cmpFCFS{
+    bool operator () ( Process* p1,  Process* p2) {
+        if( p1->enter_run_queue_time == p2->enter_run_queue_time)
+        {
+            return p1->pid > p2->pid;
+        }
+        return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
+    }
+};
+class FCFS: public Scheduler{
+    private:
+    // priority_queue<Process*, vector<Process*>, cmpFCFS> rq;
+    queue<Process*> rq;
+    public:
+    FCFS(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
+    void add_process(Process * proc){
+        rq.push(proc) ;
+    }
+    Process* get_next_process(){
+        if(rq.empty())
+        {
+            return NULL;
+            // if(rq.empty()) { return NULL;}
+        }
+        Process* topproc = rq.front(); 
+        rq.pop(); 
+        return topproc ;
+    }
+};
+
 class RR:public Scheduler{
     private:
-    priority_queue<Process*, vector<Process*>, cmpFCFS> rq3;
+    // priority_queue<Process*, vector<Process*>, cmpFCFS> rq3;
+    queue<Process*> rq3;
     public:
     RR(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
     void add_process(Process * proc){
@@ -194,13 +200,14 @@ class RR:public Scheduler{
             return NULL;
             // if(rq3.empty()) { return NULL;}
         }
-        Process* topproc = rq3.top(); 
+        // Process* topproc = rq3.top(); 
+        Process* topproc = rq3.front(); 
         rq3.pop(); 
         return topproc ;
     }
     void dec_and_reset(Process* proc){
         rq3.push(proc);
-    }
+    } // when it is preempted, no new cpu burst, add to queue
 }; 
 
 #endif

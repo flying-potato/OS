@@ -18,11 +18,27 @@
 #include "state.h"
 using namespace std;
 
+// struct mycmp
+// {
+//     //big value in < expression pop out first
+//     bool operator () ( Event* evt1,  Event* evt2) { //similar to reload <
+//         if(evt1->evtTimeStamp == evt2->evtTimeStamp){
+//             return evt1->genTimeStamp > evt2->genTimeStamp;
+//         }
+//         return evt1->evtTimeStamp > evt2->evtTimeStamp; //small ahead of big
+//     }
+
+// };
 struct mycmp
 {
     //big value in < expression pop out first
     bool operator () ( Event* evt1,  Event* evt2) { //similar to reload <
         if(evt1->evtTimeStamp == evt2->evtTimeStamp){
+            if(evt1->genTimeStamp == evt2->genTimeStamp)
+            {
+                return evt1->evtProcess->pid > evt2->evtProcess->pid ; 
+            }
+
             return evt1->genTimeStamp > evt2->genTimeStamp;
         }
         return evt1->evtTimeStamp > evt2->evtTimeStamp; //small ahead of big
@@ -37,7 +53,7 @@ struct mycmpfinish
     }
 };
 
-ofstream fcout("../refout/someout");
+ofstream fcout("../refout_v/someout");
 
 int quant;
 int CURRENT_TIME = 0;
@@ -69,12 +85,7 @@ int get_next_event_time(){
 void simulation(Scheduler& schedref, int vflag);
 
 int ofs = 0;
-int randomPriority()
-{
-    int ret  =  rand[ofs] % PRIO ;
-    ofs++;
-    return ret ;    
-}
+
 int randomBurst(int burst){
     int ret = 1+rand[ofs]%burst ;
     ofs++ ;
@@ -154,10 +165,7 @@ int main( int argc, char* argv[] ){
         rand.push_back( numinline);
     }
     rfile.close();
-/*    for(int i = 0; i<20; i++){
-        fcout<<rand[i]<<" "<<rand[i]%4<<" "<<rand[i]%90<<endl;
-    }*/
-    //event reading
+
     string line;
     stringstream linestream;
     int pid = 0;
@@ -174,7 +182,7 @@ int main( int argc, char* argv[] ){
 
         Process *p = new Process(pid, arr_time, totalcpu, CB, IO, CREATED, randomBurst(PRIO));
         //static priority is  %PRIO+1, dynamic priority initialized from static-1
-        Event* e = new Event(arr_time,arr_time, CREATED,READY, TRANS_TO_READY, p );
+        Event* e = new Event(arr_time,CURRENT_TIME, CREATED,READY, TRANS_TO_READY, p );
 
         eventqueue.push(e);
         pid ++; //next process
@@ -328,7 +336,6 @@ case TRANS_TO_PREEMPT:
             fcout <<" rem="<< evtProc->rem;	
 
             fcout<<" prio=" << evtProc->priority<<endl;
-
             evtProc->enter_run_queue_time = CURRENT_TIME; 
             schedref.dec_and_reset(evtProc);
 /*            evtProc->priority --;
