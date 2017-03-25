@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <unistd.h>
 
 #include "event.h"
 #include "process.h"
@@ -60,7 +61,7 @@ int get_next_event_time(){
 }
 
 
-void simulation(PrioSched& schedref);
+void simulation(Scheduler& schedref);
 
 int ofs = 0;
 int randomPriority()
@@ -93,20 +94,19 @@ void printEventQueue(){
 
 
 int main( int argc, char* argv[] ){
-/*    int vflag = 0;
+    char tmp;
+    int vflag = 0;
     char* sched_option = NULL;
     char* infile_name = NULL;
     char* randfile_name = NULL;
-
     while((tmp=getopt(argc,argv,"vs:"))!=-1)
     {
         switch(tmp){
         case 'v':
             vflag = 1 ;
             break;
-
         case 's':
-            sval = optarg;
+            sched_option = optarg;
             break; 
         }
     }
@@ -114,15 +114,32 @@ int main( int argc, char* argv[] ){
         infile_name = argv[optind];
         optind++;
         randfile_name = argv[optind];
-    }   */
-
+    }   
+    Scheduler* sched;
+    int q = sched_option[1]-48; 
+    switch(sched_option[0]){
+        case 'P':
+            sched = new PrioSched("PRIO", q); 
+            break;
+        case 'F':
+            sched = new FCFS("FCFS", 10000);
+            break;
+        case 'L':
+            sched = new LCFS("LCFS", 10000);
+            break;
+        // case:
+        //     break;
+        // case:
+        //     break;
+            
+    }
     //read option and filename
     ifstream infile, rfile;
-    infile.open("../input1"); //input#
-    rfile.open("../rfile") ;
-/*    infile.open(infile_name);
-    infile.open(randfile_name);
-*/    //random file reading
+    // infile.open("../input1"); //input#
+    // rfile.open("../rfile") ;
+    infile.open(infile_name);
+    rfile.open(randfile_name);
+   //random file reading
     int numinline, randcount;
     rfile>>randcount;      
     while(rfile>>numinline){ 
@@ -137,9 +154,9 @@ int main( int argc, char* argv[] ){
     stringstream linestream;
     int pid = 0;
     int arr_time, totalcpu, CB, IO;     
-    PrioSched* sched = new PrioSched(); 
+    // PrioSched* sched = new PrioSched(); 
     cout<<"sched address: "<<sched<<endl;
-    PrioSched& schedref = *sched;
+    Scheduler& schedref = *sched;
     while( getline(infile,line) ){
         linestream.clear();
         linestream<<line;
@@ -167,8 +184,8 @@ int main( int argc, char* argv[] ){
 
 
 
-void simulation(PrioSched& schedref){
-	quant = schedref.quantum;
+void simulation(Scheduler& schedref){
+	quant = schedref.get_quantum();
     int cb;
     Event* evt;
 	while (get_event(evt)){ //reference argument
@@ -199,8 +216,9 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
                 evtProc->need_new_cb = true;
             }
             evtProc->enter_run_queue_time = CURRENT_TIME;      
-            cout<<" rdy:"<<evtProc->enter_run_queue_time<<endl;   
-            schedref.run_queue.push(evtProc) ; //add process to run_queue
+            // cout<<" rdy:"<<evtProc->enter_run_queue_time
+            cout<<endl;   
+            schedref.add_process(evtProc) ; //add process to run_queue
             // cout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
             CALL_SCHED = true; //conditional on whether something is run
             break;
@@ -253,7 +271,7 @@ case TRANS_TO_BLOCK:
             evtProc->rem -= evtProc->cb; //related with running time, cb<=quantum
             evtProc->ib = randomBurst(evtProc->IO) ;
             //create an event for when process becomes READY again
-            cout<<" ib="<< evtProc->ib <<" rem="<<evtProc->rem<<endl;
+            cout<<"  ib="<< evtProc->ib <<" rem="<<evtProc->rem<<endl;
             evtProc->IT += evtProc->ib;
             ee = new  Event(CURRENT_TIME+evtProc->ib, CURRENT_TIME, BLOCK, READY, TRANS_TO_READY, evtProc);
 
@@ -331,7 +349,7 @@ case TRANS_TO_PREEMPT:
 	}//while loop
     int last_FT = -1;
     double cpu_util, io_util, total_CPU, throughput, av_tt, av_cw;
-    cout<<schedref.mode<<" "<<quant<<endl;
+    cout<<schedref.get_mode()<<" "<<quant<<endl;
     while (!finish_queue.empty())
     {
         Process &pt = *finish_queue.top();
