@@ -21,22 +21,20 @@ struct mycmpProcess
             return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
         }
             return process1->priority < process2->priority; //big first 
-    }
+    }    
+    
+    // bool operator () ( Process* process1,  Process* process2) {
+    //     if( process1->priority == process2->priority)
+    //     {
+    //         if(process1->enter_run_queue_time == process2->enter_run_queue_time){
+    //             return  process1->pid > process2->pid;
+    //         }
+    //         return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
+    //     }
+    //     return process1->priority < process2->priority; //big first 
+    // }
 
 };
-
-struct mycmpProcessSJF //shortest job
-{
-    bool operator () ( Process* process1,  Process* process2) {
-        if( process1->rem == process2->rem)
-        {
-            return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
-        }
-        return process1->rem > process2->rem; 
-    }
-
-};
-
 class Scheduler{
     protected: //visited by child class
     string mode;
@@ -100,10 +98,33 @@ class PrioSched: public Scheduler{
     }
 
 };
+struct cmpFCFS{
+    bool operator () ( Process* p1,  Process* p2) {
+        if( p1->enter_run_queue_time == p2->enter_run_queue_time)
+        {
+            return p1->pid > p2->pid;
+        }
+        return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
+    }
+};
 class FCFS: public Scheduler{
+    private:
+    priority_queue<Process*, vector<Process*>, cmpFCFS> rq;
     public:
     FCFS(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
-};
+    void add_process(Process * proc){
+        rq.push(proc) ;
+    }
+    Process* get_next_process(){
+        if(rq.empty())
+        {
+            return NULL;
+            // if(rq.empty()) { return NULL;}
+        }
+        Process* topproc = rq.top(); 
+        rq.pop(); 
+        return topproc ;
+    }};
 class LCFS: public Scheduler{
     private:
     stack<Process*> run_stack ;
@@ -125,13 +146,61 @@ class LCFS: public Scheduler{
         return topproc ;
     }
 };
-class ShortestJobFirst:public Scheduler{
-    private:
-    priority_queue<Process*, vector<Process*>, mycmpProcessSJF> run_queue2;
-    public:
-    ShortestJobFirst(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
-
+struct cmpSJF //shortest job
+{
+    bool operator () ( Process* p1,  Process* p2) {
+        if( p1->rem == p2->rem){
+            // if( p1->enter_run_queue_time == p2->enter_run_queue_time)
+            // {
+            //     return p1->pid > p2->pid;
+            // }
+            // return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
+            return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
+        }
+        return p1->rem > p2->rem; 
+    }
 
 };
+class SJF:public Scheduler{
+    private:
+    priority_queue<Process*, vector<Process*>, cmpSJF> rq2;
+    public:
+    SJF(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
+    void add_process(Process* p){
+        rq2.push(p);
+    }
+    Process* get_next_process(){
+        if(rq2.empty())
+        {
+            return NULL;
+            // if(rq2.empty()) { return NULL;}
+        }
+        Process* topproc = rq2.top(); 
+        rq2.pop(); 
+        return topproc ;
+    }
+};
+class RR:public Scheduler{
+    private:
+    priority_queue<Process*, vector<Process*>, cmpFCFS> rq3;
+    public:
+    RR(string mode_input, int quantum_input):Scheduler(mode_input,quantum_input){}
+    void add_process(Process * proc){
+        rq3.push(proc) ;
+    }
+    Process* get_next_process(){
+        if(rq3.empty())
+        {
+            return NULL;
+            // if(rq3.empty()) { return NULL;}
+        }
+        Process* topproc = rq3.top(); 
+        rq3.pop(); 
+        return topproc ;
+    }
+    void dec_and_reset(Process* proc){
+        rq3.push(proc);
+    }
+}; 
 
 #endif

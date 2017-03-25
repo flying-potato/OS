@@ -127,10 +127,12 @@ int main( int argc, char* argv[] ){
         case 'L':
             sched = new LCFS("LCFS", 10000);
             break;
-        // case:
-        //     break;
-        // case:
-        //     break;
+        case 'S':
+            sched = new SJF("SJF", 10000);
+            break;
+        case 'R':
+            sched = new RR("RR", q);
+            break;
             
     }
     //read option and filename
@@ -155,7 +157,7 @@ int main( int argc, char* argv[] ){
     int pid = 0;
     int arr_time, totalcpu, CB, IO;     
     // PrioSched* sched = new PrioSched(); 
-    cout<<"sched address: "<<sched<<endl;
+    
     Scheduler& schedref = *sched;
     while( getline(infile,line) ){
         linestream.clear();
@@ -171,12 +173,10 @@ int main( int argc, char* argv[] ){
         eventqueue.push(e);
         pid ++; //next process
     }
-    // test part
-    // cout<<"shced runque top proc's prio: "<< (schedref.run_queue.top())->priority <<endl;
-    cout<<"event num: "<<eventqueue.size()<<endl;
+
     infile.close();
     simulation(schedref);
-    // printEventQueue();
+
 
 
     return 1;
@@ -199,7 +199,13 @@ void simulation(Scheduler& schedref){
 		evtProc->curState = evt->newstate ; //process's new state
 		evtProc->state_ts = CURRENT_TIME ; //update state_ts
 
-        cout<<CURRENT_TIME<<" "<<evtProc->pid<<" "<< span<<": "<<STA[evt->oldstate] <<" -> "<<STA[evt->newstate];
+        // cout<<CURRENT_TIME<<" "<<evtProc->pid<<" "<< span<<": "<<STA[evt->oldstate] <<" -> "<<STA[evt->newstate];
+        cout<<CURRENT_TIME<<" "<<evtProc->pid<<" "<< span<<": " ;
+        if(evt->newstate == Done){
+            cout<<"Done"<<endl;
+        }else{
+            cout<<STA[evt->oldstate] <<" -> "<<STA[evt->newstate];
+        }     
 
         switch(evt->transition){
 			//tell which old state come from
@@ -224,7 +230,12 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
             break;
 
 			// when trans to running, we need give the cb,
-	
+case TRANS_TO_DONE:
+            evtProc->finish(CURRENT_TIME);
+            finish_queue.push(evtProc) ; // finish proc
+            CURRENT_RUNNING_PROCESS = NULL;
+            CALL_SCHED = true;// WHEN DONE, need CALL SCHED       
+            break; 	
 case TRANS_TO_RUN: 
         //ready -> run //when it has cb from preemption
             // no need to create new cb
@@ -235,18 +246,23 @@ case TRANS_TO_RUN:
                 cb = evtProc->cb; // no need for new cb
             }
 
-            if (evtProc->rem <= quant && cb >= evtProc->rem) { //****last run 
+            if (evtProc->rem <= quant && cb >= evtProc->rem) { //done event
                 cb = evtProc->rem;
-                cout <<" cb="<<cb<<" rem="<< evtProc->rem  <<" prio="<< evtProc->priority <<endl;
-                int FT = CURRENT_TIME+cb;
-                evtProc->state_ts = FT;
-                cout << FT<< " " << evtProc->pid << " "<<cb<<": Done"<<endl;
-                evtProc->finish(FT);
-                finish_queue.push(evtProc) ; // finish proc
+                // in RUNING
+                cout <<" cb="<<cb<<" rem="<< evtProc->rem  <<" prio="<< evtProc->priority <<endl; 
 
-                CURRENT_TIME = FT;
-                CURRENT_RUNNING_PROCESS = NULL;
-                CALL_SCHED = true;// WHEN DONE, need CALL SCHED
+                // int FT = CURRENT_TIME+cb;
+                // evtProc->state_ts = FT;
+                // cout << FT<< " " << evtProc->pid << " "<<cb<<": Done"<<endl;
+                // evtProc->finish(FT);
+                // finish_queue.push(evtProc) ; // finish proc
+
+                // CURRENT_TIME = FT;
+                // CURRENT_RUNNING_PROCESS = NULL;
+                // CALL_SCHED = true;// WHEN DONE, need CALL SCHED
+
+                Event* doneEvt = new Event(CURRENT_TIME+cb, CURRENT_TIME, RUNNG, Done, TRANS_TO_DONE, evtProc);
+                eventqueue.push(doneEvt);
                 break;
             } 
             evtProc->cb = cb;
@@ -349,7 +365,10 @@ case TRANS_TO_PREEMPT:
 	}//while loop
     int last_FT = -1;
     double cpu_util, io_util, total_CPU, throughput, av_tt, av_cw;
-    cout<<schedref.get_mode()<<" "<<quant<<endl;
+    if(schedref.get_mode() == "RR" || schedref.get_mode()=="PRIO"){
+        printf("%s %d\n", schedref.get_mode().c_str(), quant);
+    }
+    else{ printf("%s\n", schedref.get_mode().c_str()); }
     while (!finish_queue.empty())
     {
         Process &pt = *finish_queue.top();
