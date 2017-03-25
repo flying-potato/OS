@@ -36,6 +36,8 @@ struct mycmp
         if(evt1->evtTimeStamp == evt2->evtTimeStamp){
             if(evt1->genTimeStamp == evt2->genTimeStamp)
             {
+                if(evt1->oldstate == CREATED){
+                     return evt1->evtProcess->pid > evt2->evtProcess->pid; }
                 // return evt1->evtProcess->pid > evt2->evtProcess->pid ; 
                 return evt1->rawtime > evt2->rawtime ; 
             }
@@ -226,6 +228,7 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
             if(evt->oldstate == CREATED) {
                 // fcout<<" prio="<<evtProc->priority;
                 evtProc->need_new_cb = true;
+                fcout<< " rem="<<evtProc->rem ;
                 PROC_NUM ++;
             }
             else{ //BLOCKED

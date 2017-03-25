@@ -124,11 +124,10 @@ struct cmpSJF //shortest job
 {
     bool operator () ( Process* p1,  Process* p2) {
         if( p1->rem == p2->rem){
-            // if( p1->enter_run_queue_time == p2->enter_run_queue_time)
-            // {
-            //     return p1->pid > p2->pid;
-            // }
-            // return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
+            if( p1->enter_run_queue_time == p2->enter_run_queue_time)
+            {
+                return p1->pid > p2->pid;
+            }
             return  p1->enter_run_queue_time > p2->enter_run_queue_time ;
         }
         return p1->rem > p2->rem; 
