@@ -111,7 +111,7 @@ void printEventQueue(){
     fcout<<"--end printing event queue--"<<endl;
 }
 
-
+int Event::order_global = 0;
 int main( int argc, char* argv[] ){
     stringstream linestream;
     char tmp;
@@ -165,7 +165,7 @@ int main( int argc, char* argv[] ){
             break;
             
     }
-
+    
     //read option and filename
     ifstream infile, rfile;
     // infile.open("../input1"); //input#
@@ -252,6 +252,7 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
             evtProc->enter_run_queue_time = CURRENT_TIME;      
             // fcout<<" rdy:"<<evtProc->enter_run_queue_time
             fcout<<endl;   
+            evtProc->order_proc = evt->order;
             schedref.add_process(evtProc) ; //add process to run_queue
             // fcout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
             CALL_SCHED = true; //conditional on whether something is run
@@ -355,6 +356,7 @@ case TRANS_TO_PREEMPT:
             fcout<<" prio=" << evtProc->priority<<endl;
             evtProc->enter_run_queue_time = CURRENT_TIME; 
     time  ( &evtProc->rawtime ); 
+            evtProc->order_proc = evt->order;
             schedref.dec_and_reset(evtProc);
 /*            evtProc->priority --;
             if(evtProc->priority == -1){

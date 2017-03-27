@@ -28,9 +28,10 @@ struct mycmpProcess
         {
             if(process1->enter_run_queue_time == process2->enter_run_queue_time){
             
-            if( process1->prevState==CREATED &&process2->prevState==CREATED){
+/*            if( process1->prevState==CREATED &&process2->prevState==CREATED){
                 return  process1->pid > process2->pid;
-            }else if (process1->prevState==CREATED ||process2->prevState==CREATED){
+            }
+            else if (process1->prevState==CREATED ||process2->prevState==CREATED){
                 if(process1->prevState==CREATED&&process2->prevState!=CREATED)
                 {
                     process2->rawtime += 100;
@@ -40,11 +41,10 @@ struct mycmpProcess
                     process1->rawtime += 100;
                 }
                 return  process1->rawtime > process2->rawtime;
-            }
-            // else{
-            //     return process1->prevstate_ts > process2->prevstate_ts;
-            // }
+            }*/
 
+
+                return process1->order_proc > process2->order_proc;
             }
             return  process1->enter_run_queue_time > process2->enter_run_queue_time ;
         }

@@ -22,6 +22,7 @@ class Process{
         int state_ts; // curState beginning timestamp
         int prevstate_ts;
         int timeInPrevState; 
+        int order_proc ;
 
         int FT, TT, IT, CW;
 time_t rawtime;

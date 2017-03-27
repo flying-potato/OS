@@ -11,6 +11,8 @@ using namespace std;
 
 class Event{
     public:
+        static int order_global;
+        int order;
         int evtTimeStamp; //CURRENT_TIME = evtTimeStamp
         int genTimeStamp; //when to call new Event()
         Process* evtProcess;
@@ -24,11 +26,14 @@ class Event{
             
 /*
 Event * ee = new Event(99, Done, Done, TRANS_TO_PREEMPT, pp, 119);
-*/
+*/      
+
         Event(int timeStamp,int gen_time, STATE oldstate, STATE newstate, TRANSITION transition, Process* p)
         : evtTimeStamp(timeStamp),genTimeStamp(gen_time),oldstate(oldstate),newstate(newstate),transition(transition), evtProcess(p)
         { 
                 time ( &rawtime );  
+                order_global ++ ;
+                order = order_global;
            }
 
 
