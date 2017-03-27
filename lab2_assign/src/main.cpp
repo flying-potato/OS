@@ -252,7 +252,7 @@ case TRANS_TO_READY: 	// CREATED ->READY or BLOCK->READY or
             evtProc->enter_run_queue_time = CURRENT_TIME;      
             // fcout<<" rdy:"<<evtProc->enter_run_queue_time
             fcout<<endl;   
-            evtProc->order_proc = evt->order;
+            evtProc->order_proc = evt->order; //get process order by event order
             schedref.add_process(evtProc) ; //add process to run_queue
             // fcout<<"run_quuu size "<<schedref.run_queue.size()<<endl;
             CALL_SCHED = true; //conditional on whether something is run
