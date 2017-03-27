@@ -113,10 +113,14 @@ void printEventQueue(){
 
 
 int main( int argc, char* argv[] ){
+    stringstream linestream;
     char tmp;
     int vflag = 0;
-    char* sched_option = NULL;
+    // char* sched_option = NULL;
+    char sched_options[10]; //declare some space, use a pointer char* to point it 
+    char* sched_option = sched_options ;
     char* infile_name = NULL;
+
     char* randfile_name = NULL;
     while((tmp=getopt(argc,argv,"vs:"))!=-1)
     {
@@ -135,8 +139,15 @@ int main( int argc, char* argv[] ){
         randfile_name = argv[optind];
     }   
     Scheduler* sched;
-    int q = sched_option[1]-48; 
-    switch(sched_option[0]){
+
+    // string sched_str = string(sched_option) ;
+    linestream<<sched_option; //can use const char* as input 
+    int q;
+    char opt;
+    linestream>>opt>>q;
+    // cout<<"opt:"<<opt<<endl<<"q:"<<q<<endl;
+    // switch(sched_option[0]){
+    switch(opt){
         case 'P':
             sched = new PrioSched("PRIO", q); 
             break;
@@ -170,7 +181,8 @@ int main( int argc, char* argv[] ){
     rfile.close();
 
     string line;
-    stringstream linestream;
+    linestream.clear();
+    
     int pid = 0;
     int arr_time, totalcpu, CB, IO;     
     // PrioSched* sched = new PrioSched(); 
