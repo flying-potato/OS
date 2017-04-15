@@ -28,13 +28,13 @@ void simulation( ifstream& infile, vector<PTE*>& ptable,vector<Frame* >&  ftable
 	{
 		cout<< rw<<" "<<pageindex<< endl;
 		//test whether pte is present , if yes read next instruction, if not seek a free frame to load it
-		if( ptable[pageindex] ) //virtural page has PTE page table entry
+		if( ptable[pageindex] -> present ) 
 		{
-			// continue;
-			// Frame *oldframe , *newframe ;
-			// newframe = get_frame(&oldframe)
+			continue;
 		}
-
+		Frame *oldframe , *newframe ;
+		newframe = get_frame(&oldframe)
+		
 	}
 
 }
