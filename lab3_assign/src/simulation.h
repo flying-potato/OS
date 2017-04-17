@@ -36,17 +36,19 @@ void printFrameTable(vector<Frame* >&  ftable);
 void printPageTable( vector<PTE* >&  ptable );
 
 void change_page_index_in_fto(vector<int>& ftable_ordered, int pageind,int frameind) ;
-void printOrderedFrametable(vector<int> ftable_ordered);
+void printOrderedFrametable(vector<int>& ftable_ordered,int framenum);
 
 
 void simulation(Pager* pager, ifstream& infile,
         vector<PTE*>& ptable, int framenum, vector<Frame* >&  ftable , vector<int>& ftable_ordered){
 
 	int rw,  pageindex, instrind = 0;
-
+	const char outform[20] = "%d: %-5s%4d%4d\n";
 	while(get_next_instr(infile, rw, pageindex, instrind))
 	{
 		PTE* newpte = ptable[pageindex] ;
+
+		newpte->ref = 1; //has to be 1
 
 		if(! newpte->present ){ // now not in frame table, need new frame to load the page
 
@@ -57,12 +59,13 @@ void simulation(Pager* pager, ifstream& infile,
 
 			PTE* oldpte = newframe-> pageptr ; //has a PTE in the frame
 			if(oldpte != NULL){
-				printf("%d:\tUNMAP\t%d\t%d\n", instrind, oldpte->pageind, newframe->frameind);
+				printf(outform , instrind,"UNMAP", oldpte->pageind, newframe->frameind);
                 stats.unmaps++;
 				oldpte-> present = 0; //no longer present in frame
+				oldpte-> ref = 0;
 				if(oldpte->mod) {
 					oldpte-> pageout = 1;
-					printf("%d:\t OUT\t%d\t%d\n", instrind, oldpte->pageind, newframe->frameind);
+					printf(outform , instrind,"OUT",oldpte->pageind, newframe->frameind);
                     stats.outs++;
 				}
 				//process oldpte, modified? if pageout = 1, frameind reset to be -1
@@ -70,14 +73,17 @@ void simulation(Pager* pager, ifstream& infile,
 
 			//if newpte pageout
 			if(newpte->pageout){
-				printf("%d:\tIN\t%d\t%d\n", instrind, newpte->pageind, newframe->frameind);
+				printf(outform , instrind,"IN", newpte->pageind, newframe->frameind);
+                //after page in the has-been-modified page, mod = 0
+                newpte->mod  = 0;
+                //newpte->pageout = 0;//still keep pageout
                 stats.ins++;
 			}
 			else{
-				printf("%d:\tZERO\t \t%d\n", instrind, newframe->frameind);
+				printf("%d: %-9s%4d\n",  instrind,"ZERO", newframe->frameind);
 			    stats.zeros++;
             }
-			printf("%d:\tMAP   \t%d\t%d\n", instrind, newpte->pageind, newframe->frameind);
+			printf(outform , instrind,"MAP", newpte->pageind, newframe->frameind);
             stats.maps++;
 
             //change newpte flagbit
@@ -86,24 +92,23 @@ void simulation(Pager* pager, ifstream& infile,
 
             newpte->frameind = newframe->frameind;
             newpte->present = 1;
-            newpte->ref = 1;
-            if(rw == 1) {
-                newpte->mod = 1;
-            }else{
-                newpte->mod = 0;
-            }
 
-			
-			
+
+
+
 			change_page_index_in_fto(ftable_ordered, newpte->pageind, newframe->frameind );
-			
-			
 
 
 		}
+        //after load newpte -> frame
+        if(rw == 1) {
+            newpte->mod = 1;
+        }else{
+            // newpte->mod = 0; //not change the mod
+        }
 		printPageTable(ptable);
 		cout<< endl;
-		printOrderedFrametable(ftable_ordered); cout<< " || "; printFrameTable(ftable) ;
+		printOrderedFrametable(ftable_ordered, framenum); cout<< " || "; printFrameTable(ftable) ;
 		//option p f
 
 		instrind ++ ; //after read an instruction
@@ -113,10 +118,10 @@ void simulation(Pager* pager, ifstream& infile,
 
     stats.totalcost= 400*(stats.unmaps+stats.maps) +
         3000*(stats.ins+stats.outs) + 150*(stats.zeros) + instrind;
-	
+
 
 	printPageTable(ptable); cout<<endl;
-    printOrderedFrametable(ftable_ordered);    cout<<endl;
+    printOrderedFrametable(ftable_ordered, framenum);    cout<<endl;
 
 	printf("SUM %d U=%d M=%d I=%d O=%d Z=%d ===> %llu\n",
 		instrind, stats.unmaps, stats.maps, stats.ins, stats.outs, stats.zeros, stats.totalcost);
@@ -162,7 +167,9 @@ bool get_next_instr(ifstream& infile, int& rw, int& pageindex , int& instrind){
 void printFrameTable(vector<Frame* >&  ftable){
     for (unsigned i = 0; i<ftable.size(); i++)
     {
-        cout<< " "<< ftable[i]->frameind ;
+		if( ftable[i]->pageptr != NULL ){
+			cout<< ftable[i]->frameind <<" " ;
+		}
     }
 	cout<<endl;
 }
@@ -171,14 +178,21 @@ void printPageTable( vector<PTE* >&  ptable ) //according to frameind order
     for (unsigned i = 0; i<ptable.size(); i++)
     {
         PTE* pp  = ptable[i] ;
-        if(pp->present){
+        if(!pp->present){
+            if(pp->pageout){
+                //not present in frame, but swapped out
+                printf("%c ", '#');
+            }
+            else{
+                printf("%c ", '*');
+            }
+        }
+        else{
             char R, M, S;
             R = ((pp->ref)? 'R':'-');
             M = ((pp->mod)? 'M':'-');
             S = ((pp->pageout)? 'S':'-');
             printf( "%d:%c%c%c ", i,R,M,S  );
-        }else{
-            printf("%c ", '*');
         }
     }
 }
@@ -190,13 +204,18 @@ void change_page_index_in_fto(vector<int>& ftable_ordered,  int pageind,int fram
 		ftable_ordered[frameind] = pageind ;
 	}
 }
-void printOrderedFrametable(vector<int> ftable_ordered){
-	for (unsigned i = 0; i<ftable_ordered.size() ;i++){
+void printOrderedFrametable(vector<int>& ftable_ordered, int framenum){
+	unsigned i = 0;
+	for ( i = 0; i<ftable_ordered.size() ;i++){
 		// char pr = (ftable_ordered[i] == -1? '*':char(ftable_ordered[i]));
 		// printf("%c ", pr );
 		cout<< ftable_ordered[i]<<" ";
 	}
-	
+	for( ; i<framenum ; i++ )
+	{
+		cout<< "*" << " ";
+	}
+
 }
 
 #endif
