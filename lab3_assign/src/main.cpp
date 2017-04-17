@@ -19,41 +19,36 @@
 
 #include "PTE.h"
 #include "simulation.h"
-// #include "Pager.h"
+#include "Frame.h"
+#include "Pager.h"
+
 using namespace std;
 
 void changeBitmap(map<char, bool> flagbitmap, string& out_flagbitstr){
 	for (int i = 0 ; i<out_flagbitstr.size(); i++){
 		char bit =  out_flagbitstr[i] ;
-		flagbitmap[bit] = true; 
+		flagbitmap[bit] = true;
 	}
 }
 
-void initFlagbits( map<char, bool> mymap, string flagbitstr ){
-	// for (std::map<char,bool>::iterator it=mymap.begin(); it!=mymap.end(); ++it){
-	// 	cout<<it->first<<it->second<<endl;
-	// }
 
-}
 
 
 int main( int argc, char* argv[] )
 {
-	
+
     // struct PTE* ptable[64] ;
-	// bool printOut=false, printPage=false, printFrame=false, printSum=false, printEachPage=false,printEachFrame=false,printEachAging=false;
 
 	map<char, bool> flagbitmap;
-	string flagbit_str = "OPFS" ; //all bit char
-	for(int i = 0; i<flagbit_str.size(); i++){
-		flagbitmap[ flagbit_str[i] ]  = false; // init all bit char to false
+	string flagbitstr = "apfOPFS" ; //init option
+	for(int i = 0; i<flagbitstr.size(); i++){
+		flagbitmap[ flagbitstr[i] ]  = false; // init all bit char to false
 	}
 
 	stringstream tmp_stream;
 	char algo; int framenum; string out_flagbitstr;
 	char *infile_name = NULL;
     char *randfile_name = NULL;
-    char* algo_ptr = NULL, *out_ptr = NULL, *framenum_ptr = NULL;
     char tmp;
     while((tmp=getopt(argc,argv,"a:o:f:"))!=-1) //read every option entry
     {
@@ -62,19 +57,19 @@ int main( int argc, char* argv[] )
             //algo_ptr = optarg;
 			// algo_ptr = optarg;
 			algo = *optarg;
-			cout<<algo<<endl;
+			// cout<<algo<<endl;
             break;
-		case 'o': 
+		case 'o':
 			// out_ptr = optarg;
 			out_flagbitstr = optarg;
-			// cout<<out_flagbitstr<<endl;	
-			changeBitmap(flagbitmap , out_flagbitstr) ; 
+			// cout<<out_flagbitstr<<endl;
+			changeBitmap(flagbitmap , out_flagbitstr) ;
 			break;
 		case 'f':
-			// framenum_ptr = optarg; 
+			// framenum_ptr = optarg;
 			tmp_stream << optarg;
 			tmp_stream >> framenum ;
-			cout<< framenum<< endl;
+			// cout<< framenum<< endl;
 			break;
         }
     }
@@ -83,26 +78,30 @@ int main( int argc, char* argv[] )
         optind++;
         randfile_name = argv[optind];
     }
-
+    // init ptable , ftable
 	vector<PTE*> ptable;
 	for (int i = 0; i<VP ;i++){ //i means its pageindex, visit ptable[i]
-		ptable.push_back(new PTE()) ;
+		ptable.push_back(new PTE( i )) ;
 	}
 
-	vector<Frame* > ftable;
+	//vector<Frame* > ftable;
+    vector<Frame* > ftable ;
 	for (int i = 0; i<framenum ;i++){ //i means its pageindex, visit ptable[i]
-		ftable.push_back(new Frame()) ;
+        ftable.push_back(new Frame(i)) ;
 	}
 
-
-	// simulation begins
+	vector<int> ftable_ordered ;
+	// for(unsigned i = 0; i<framenum ; i++){
+	// 	ftable_ordered[i] = -1;
+	// }
 	// Pager* pager = new FIFO();
 	ifstream infile, randfile;
-	infile.open(infile_name) ; 
+	infile.open(infile_name) ;
 	randfile.open(randfile_name);
 
+    Pager* pager = new FIFO() ;
 
-	simulation( infile, ptable, ftable);
+	simulation( pager, infile, ptable, framenum,  ftable, ftable_ordered ) ;
 
 	infile.close();
 	randfile.close();
