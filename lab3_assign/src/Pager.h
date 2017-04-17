@@ -15,6 +15,17 @@ class Pager{
 	public:
 	Pager(){}
 	virtual Frame* allocate_frame(vector<Frame* >& ftable ){   }
+
+	virtual void printFrameInfoPager(vector<Frame* >&  ftable){
+		cout<< " || ";
+		for (unsigned i = 0; i<ftable.size(); i++)
+		{
+			if( ftable[i]->pageptr != NULL ){
+				cout<< ftable[i]->frameind <<" " ;
+			}
+		}
+		
+	}
 	// virtual ~Pager(){} //delete[]
 };
 
@@ -30,6 +41,7 @@ class FIFO: public Pager{
 
 		//Frame(int in_frameind):
 	}
+
 };
 
 
@@ -72,5 +84,36 @@ class Random: public Pager{
 		Frame* zeroed_frame = ftable[modulo];
         return zeroed_frame ;
 	}
+	virtual void printFrameInfoPager(vector<Frame* >&  ftable){} //do nothing
 };
+
+
+class Clock_c: public Pager{
+    private:
+    int framenum;
+	public:
+    static int hand;
+	Clock_c(int frnum):Pager(){
+        mode = "c";
+        //rand_ptr = in_rand_ptr;
+        framenum = frnum;
+
+    }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+
+		Frame* zeroed_frame = ftable[ hand ];
+        while (zeroed_frame->pageptr!=NULL && zeroed_frame->pageptr->ref==1)
+        {
+            hand++;
+            zeroed_frame->pageptr->ref = 0;
+            if(hand==framenum){ hand = 0; }
+            zeroed_frame = ftable[hand] ;
+        }
+        return zeroed_frame ;
+	}
+};
+
+
+
+
 #endif

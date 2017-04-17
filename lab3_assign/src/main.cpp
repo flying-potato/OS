@@ -91,15 +91,22 @@ int main( int argc, char* argv[] )
 	}
 
 	vector<int> ftable_ordered ;
-	// for(unsigned i = 0; i<framenum ; i++){
-	// 	ftable_ordered[i] = -1;
-	// }
-	// Pager* pager = new FIFO();
+	
 	ifstream infile, randfile;
 	infile.open(infile_name) ;
 	randfile.open(randfile_name);
+	vector<int> rand ;
+    int numinline, randcount;
+    randfile>>randcount;
+    while(randfile>>numinline){
+        rand.push_back( numinline);
+    }
+    randfile.close();
 
-    Pager* pager = new FIFO() ;
+
+    // Pager* pager = new FIFO() ; //frameindex after instr
+    // Pager* pager = new SeconChance() ; //frameindex after instr
+    Pager* pager = new Random(&rand, framenum ) ; 
 
 	simulation( pager, infile, ptable, framenum,  ftable, ftable_ordered ) ;
 

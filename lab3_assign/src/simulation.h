@@ -25,6 +25,7 @@ struct stat{
 } stats;
 
 int Frame::firstFreeInd = 0;
+//int Clock_a::hand = 0;
 
 //ordered vector of frame
 
@@ -32,7 +33,7 @@ int Frame::firstFreeInd = 0;
 bool get_next_instr(ifstream& infile, int& rw, int& pageindex, int& instrind);
 Frame* get_frame( Pager* pager, int framenum,  vector<Frame* >& ftable );
 Frame* allocate_frame_from_free_list(int framenum, vector<Frame* >&  ftable);
-void printFrameTable(vector<Frame* >&  ftable);
+
 void printPageTable( vector<PTE* >&  ptable );
 
 void change_page_index_in_fto(vector<int>& ftable_ordered, int pageind,int frameind) ;
@@ -108,7 +109,8 @@ void simulation(Pager* pager, ifstream& infile,
         }
 		printPageTable(ptable);
 		cout<< endl;
-		printOrderedFrametable(ftable_ordered, framenum); cout<< " || "; printFrameTable(ftable) ;
+		printOrderedFrametable(ftable_ordered, framenum);  pager->printFrameInfoPager(ftable) ; cout<<endl;
+		
 		//option p f
 
 		instrind ++ ; //after read an instruction
@@ -164,15 +166,7 @@ bool get_next_instr(ifstream& infile, int& rw, int& pageindex , int& instrind){
 
 }
 
-void printFrameTable(vector<Frame* >&  ftable){
-    for (unsigned i = 0; i<ftable.size(); i++)
-    {
-		if( ftable[i]->pageptr != NULL ){
-			cout<< ftable[i]->frameind <<" " ;
-		}
-    }
-	cout<<endl;
-}
+
 void printPageTable( vector<PTE* >&  ptable ) //according to frameind order
 {
     for (unsigned i = 0; i<ptable.size(); i++)
