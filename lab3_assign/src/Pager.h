@@ -15,19 +15,43 @@ class Pager{
 	public:
 	Pager(){}
 	virtual Frame* allocate_frame(vector<Frame* >& ftable ){   }
-	// virtual ~Pager(){} //delete[] 
+	// virtual ~Pager(){} //delete[]
 };
 
-class FIFO: public Pager{ 
+class FIFO: public Pager{
 
 	public:
-	FIFO():Pager(){ }
+	FIFO():Pager(){ mode = "f"; }
 	Frame* allocate_frame(vector<Frame* >& ftable ){
 		Frame* zeroed_frame = *(ftable.begin()) ;
 		ftable.push_back(zeroed_frame) ;
 		ftable.erase(ftable.begin()) ;
 		return zeroed_frame;
 
+		//Frame(int in_frameind):
+	}
+};
+
+
+class SeconChance: public Pager{
+
+	public:
+	SeconChance():Pager(){mode = "s"; }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+		Frame* zeroed_frame = *(ftable.begin()) ;
+        while( zeroed_frame->pageptr->ref )
+        {
+            zeroed_frame->pageptr->ref = 0; //clear and push it back
+            ftable.push_back(zeroed_frame) ;
+
+            ftable.erase(ftable.begin()) ;
+            zeroed_frame = *(ftable.begin()) ;
+        }
+        ftable.push_back(zeroed_frame) ;
+        ftable.erase(ftable.begin()) ;
+		return zeroed_frame;
+
+        //when first zeroed_frame ref is 1,
 		//Frame(int in_frameind):
 	}
 };
