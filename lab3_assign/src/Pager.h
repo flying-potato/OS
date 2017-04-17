@@ -51,9 +51,26 @@ class SeconChance: public Pager{
         ftable.erase(ftable.begin()) ;
 		return zeroed_frame;
 
-        //when first zeroed_frame ref is 1,
-		//Frame(int in_frameind):
 	}
 };
 
+class Random: public Pager{
+    private:
+    vector<int>* rand_ptr; int framenum;
+	public:
+	Random(vector<int> * in_rand_ptr, int frnum):Pager(){
+        mode = "r";
+        rand_ptr = in_rand_ptr;
+        framenum = frnum;
+
+    }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+        vector<int> & rand = *rand_ptr;
+        int randnum = *(rand.begin());
+        int modulo = randnum % framenum;
+        rand.erase(rand.begin());
+		Frame* zeroed_frame = ftable[modulo];
+        return zeroed_frame ;
+	}
+};
 #endif
