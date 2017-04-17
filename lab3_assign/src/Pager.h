@@ -24,7 +24,7 @@ class Pager{
 				cout<< ftable[i]->frameind <<" " ;
 			}
 		}
-		
+
 	}
 	// virtual ~Pager(){} //delete[]
 };
@@ -84,7 +84,7 @@ class Random: public Pager{
 		Frame* zeroed_frame = ftable[modulo];
         return zeroed_frame ;
 	}
-	virtual void printFrameInfoPager(vector<Frame* >&  ftable){} //do nothing
+	void printFrameInfoPager(vector<Frame* >&  ftable){} //do nothing
 };
 
 
@@ -104,13 +104,21 @@ class Clock_c: public Pager{
 		Frame* zeroed_frame = ftable[ hand ];
         while (zeroed_frame->pageptr!=NULL && zeroed_frame->pageptr->ref==1)
         {
+            zeroed_frame->pageptr->ref = 0;//clear ref bit, shift hand to see next one
             hand++;
-            zeroed_frame->pageptr->ref = 0;
             if(hand==framenum){ hand = 0; }
             zeroed_frame = ftable[hand] ;
         }
+        hand++ ;// if ref == 0, shift the hand
+        if(hand==framenum){ hand = 0; }
         return zeroed_frame ;
 	}
+
+	void printFrameInfoPager(vector<Frame* >&  ftable){
+
+		cout<< " || ";
+        cout<< "hand = "<<hand ;
+    } //do nothing
 };
 
 

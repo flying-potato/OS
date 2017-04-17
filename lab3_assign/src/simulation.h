@@ -25,7 +25,8 @@ struct stat{
 } stats;
 
 int Frame::firstFreeInd = 0;
-//int Clock_a::hand = 0;
+
+int Clock_c::hand = 0;
 
 //ordered vector of frame
 
@@ -37,7 +38,7 @@ Frame* allocate_frame_from_free_list(int framenum, vector<Frame* >&  ftable);
 void printPageTable( vector<PTE* >&  ptable );
 
 void change_page_index_in_fto(vector<int>& ftable_ordered, int pageind,int frameind) ;
-void printOrderedFrametable(vector<int>& ftable_ordered,int framenum);
+void printOrderedPageInd(vector<int>& ftable_ordered,int framenum);
 
 
 void simulation(Pager* pager, ifstream& infile,
@@ -109,8 +110,8 @@ void simulation(Pager* pager, ifstream& infile,
         }
 		printPageTable(ptable);
 		cout<< endl;
-		printOrderedFrametable(ftable_ordered, framenum);  pager->printFrameInfoPager(ftable) ; cout<<endl;
-		
+		printOrderedPageInd(ftable_ordered, framenum);  pager->printFrameInfoPager(ftable) ; cout<<endl;
+
 		//option p f
 
 		instrind ++ ; //after read an instruction
@@ -123,7 +124,7 @@ void simulation(Pager* pager, ifstream& infile,
 
 
 	printPageTable(ptable); cout<<endl;
-    printOrderedFrametable(ftable_ordered, framenum);    cout<<endl;
+    printOrderedPageInd(ftable_ordered, framenum);    cout<<endl;
 
 	printf("SUM %d U=%d M=%d I=%d O=%d Z=%d ===> %llu\n",
 		instrind, stats.unmaps, stats.maps, stats.ins, stats.outs, stats.zeros, stats.totalcost);
@@ -198,7 +199,7 @@ void change_page_index_in_fto(vector<int>& ftable_ordered,  int pageind,int fram
 		ftable_ordered[frameind] = pageind ;
 	}
 }
-void printOrderedFrametable(vector<int>& ftable_ordered, int framenum){
+void printOrderedPageInd(vector<int>& ftable_ordered, int framenum){
 	unsigned i = 0;
 	for ( i = 0; i<ftable_ordered.size() ;i++){
 		// char pr = (ftable_ordered[i] == -1? '*':char(ftable_ordered[i]));

@@ -24,6 +24,7 @@
 
 using namespace std;
 
+//int Clock_c::hand = 0;
 void changeBitmap(map<char, bool> flagbitmap, string& out_flagbitstr){
 	for (int i = 0 ; i<out_flagbitstr.size(); i++){
 		char bit =  out_flagbitstr[i] ;
@@ -91,7 +92,7 @@ int main( int argc, char* argv[] )
 	}
 
 	vector<int> ftable_ordered ;
-	
+
 	ifstream infile, randfile;
 	infile.open(infile_name) ;
 	randfile.open(randfile_name);
@@ -102,11 +103,26 @@ int main( int argc, char* argv[] )
         rand.push_back( numinline);
     }
     randfile.close();
+    Pager* pager;
+	switch(algo){
+		case 'f':
+            pager = new FIFO() ; //frameindex after instr
+            break;
 
+		case 's':
+            pager = new SeconChance() ; //frameindex after instr
+            break;
 
+		case 'r':
+            pager = new Random(&rand, framenum ) ;
+            break;
+        case 'c': //clock_c
+            pager = new Clock_c(framenum);
+            break;
+	}
     // Pager* pager = new FIFO() ; //frameindex after instr
     // Pager* pager = new SeconChance() ; //frameindex after instr
-    Pager* pager = new Random(&rand, framenum ) ; 
+    // Pager* pager = new Random(&rand, framenum ) ;
 
 	simulation( pager, infile, ptable, framenum,  ftable, ftable_ordered ) ;
 
