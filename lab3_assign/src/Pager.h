@@ -76,20 +76,22 @@ class SeconChance: public Pager{
 
 class Random: public Pager{
     private:
-    vector<int>* rand_ptr; int framenum;
+    vector<int>* rand_ptr; int framenum; int random_index;
 	public:
 	Random( int frnum , vector<int> * in_rand_ptr , map<char, bool>* in_flagbitmap_ptr):Pager(in_flagbitmap_ptr){
         mode = "r";
         framenum = frnum;
         rand_ptr = in_rand_ptr;
-
+        random_index = 0;
     }
 	Frame* allocate_frame(vector<Frame* >& ftable ){
         map<char, bool>&  flagbitmap = *flagbitmap_ptr;
         vector<int> & rand = *rand_ptr;
-        int randnum = *(rand.begin());
+        int randnum = rand[ random_index ];
         int modulo = randnum % framenum;
-        rand.erase(rand.begin());
+        random_index++;
+        if(random_index >= rand.size())
+            random_index = 0;
 		Frame* zeroed_frame = ftable[modulo];
         return zeroed_frame ;
 	}
@@ -183,7 +185,7 @@ class NRU : public Pager
     int framenum;
     vector<PTE*>* ptable_ptr;
     vector<int>* rand_ptr;
-    
+    int random_index;
     int selclass,  selidx ;
     int clock ; //10 cycle reset ref bit
 	public:
@@ -196,7 +198,7 @@ class NRU : public Pager
         framenum = frnum;
         ptable_ptr = in_ptable_ptr ;
         rand_ptr = in_rand_ptr;
-        
+        random_index = 0;
         
         // cout<<flagbitmap['a']<<"~~~aging"<<endl;
     }
@@ -226,10 +228,13 @@ class NRU : public Pager
         //select PTE from prio  ->   ret_frame
         for (int i = 0; i<4; i++){
             if(!prio[i].empty()){
-                int randnum = *(rand.begin());
+                int randnum = rand[ random_index ];
+
                 selidx = randnum % (prio[i].size());
                 selclass = i; //which class from 
-                rand.erase(rand.begin()) ;
+                random_index++; 
+                if(random_index >= rand.size())
+                    random_index = 0;
                 break;
             }
         }
