@@ -26,7 +26,7 @@ class Pager{
 		}
 
 	}
-	// virtual ~Pager(){} //delete[]
+	virtual ~Pager(){} //delete[]
 };
 
 class FIFO: public Pager{
@@ -112,6 +112,59 @@ class Clock_c: public Pager{
         hand++ ;// if ref == 0, shift the hand
         if(hand==framenum){ hand = 0; }
         return zeroed_frame ;
+	}
+
+	void printFrameInfoPager(vector<Frame* >&  ftable){
+
+		cout<< " || ";
+        cout<< "hand = "<<hand ;
+    } //do nothing
+};
+
+class Clock_X: public Pager{
+    private:
+    int framenum;
+    vector<PTE*>* ptable_ptr;
+	public:
+    static int hand;
+	Clock_X(int frnum , vector<PTE*>* in_ptable_ptr):Pager(){
+        mode = "X";
+        framenum = frnum;
+        ptable_ptr = in_ptable_ptr ;
+        //rand_ptr = in_rand_ptr;
+
+    }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+//hand is pageind of the first unref page
+// hand init on 0, select min index page, replace it and hand++, or simply hand++
+
+        bool found = false;
+        vector<PTE*>& ptable = *ptable_ptr ;
+        PTE* handon_pte = ptable[ hand ];
+        Frame* ret_frame  ;
+        while( (!handon_pte->present) || (handon_pte->present &&handon_pte->ref == 1) )
+        {
+            if (handon_pte->present &&(handon_pte->ref == 1))
+            { handon_pte->ref = 0; }
+            /*if ( handon_pte->present ){
+                if( handon_pte->ref == 1){
+                    handon_pte->ref = 0;
+                }else{
+                    ret_frame = ftable[handon_pte->frameind] ;
+                    found = true; //found the frame
+                }
+            }*/
+            //not present, directly hand++, test exceed
+            hand++;
+            if(hand>=ptable.size()){hand = 0;}
+            handon_pte = ptable[hand] ;
+
+        }
+        ret_frame = ftable[handon_pte->frameind] ;
+
+        hand++;
+        if(hand>=ptable.size()){hand = 0;}
+        return ret_frame;
 	}
 
 	void printFrameInfoPager(vector<Frame* >&  ftable){

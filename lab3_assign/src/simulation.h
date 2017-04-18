@@ -27,6 +27,7 @@ struct stat{
 int Frame::firstFreeInd = 0;
 
 int Clock_c::hand = 0;
+int Clock_X::hand = 0;
 
 //ordered vector of frame
 
@@ -41,8 +42,8 @@ void change_page_index_in_fto(vector<int>& ftable_ordered, int pageind,int frame
 void printOrderedPageInd(vector<int>& ftable_ordered,int framenum);
 
 
-void simulation(Pager* pager, ifstream& infile,
-        vector<PTE*>& ptable, int framenum, vector<Frame* >&  ftable , vector<int>& ftable_ordered){
+void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
+        int framenum, vector<Frame* >&  ftable , vector<int>& ftable_ordered){
 
 	int rw,  pageindex, instrind = 0;
 	const char outform[20] = "%d: %-5s%4d%4d\n";
@@ -191,7 +192,7 @@ void printPageTable( vector<PTE* >&  ptable ) //according to frameind order
         }
     }
 }
-void change_page_index_in_fto(vector<int>& ftable_ordered,  int pageind,int frameind) {
+void change_page_index_in_fto(vector<int>& ftable_ordered, int pageind,int frameind) {
 	if(ftable_ordered.size() <= frameind){ //frameid exceed the last index
 		ftable_ordered.push_back(pageind) ;
 	}

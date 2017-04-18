@@ -119,6 +119,9 @@ int main( int argc, char* argv[] )
         case 'c': //clock_c
             pager = new Clock_c(framenum);
             break;
+        case 'X': //clock_c
+            pager = new Clock_X(framenum, &ptable);
+            break;
 	}
     // Pager* pager = new FIFO() ; //frameindex after instr
     // Pager* pager = new SeconChance() ; //frameindex after instr
