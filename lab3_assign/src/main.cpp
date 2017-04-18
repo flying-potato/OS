@@ -25,7 +25,7 @@
 using namespace std;
 
 //int Clock_c::hand = 0;
-void changeBitmap(map<char, bool> flagbitmap, string& out_flagbitstr){
+void changeBitmap(map<char, bool>& flagbitmap, string& out_flagbitstr){
 	for (int i = 0 ; i<out_flagbitstr.size(); i++){
 		char bit =  out_flagbitstr[i] ;
 		flagbitmap[bit] = true;
@@ -63,8 +63,8 @@ int main( int argc, char* argv[] )
 		case 'o':
 			// out_ptr = optarg;
 			out_flagbitstr = optarg;
-			// cout<<out_flagbitstr<<endl;
 			changeBitmap(flagbitmap , out_flagbitstr) ;
+			// cout<<out_flagbitstr<<"aging: " << flagbitmap['a']<< endl; 
 			break;
 		case 'f':
 			// framenum_ptr = optarg;
@@ -106,21 +106,24 @@ int main( int argc, char* argv[] )
     Pager* pager;
 	switch(algo){
 		case 'f':
-            pager = new FIFO() ; //frameindex after instr
+            pager = new FIFO( &flagbitmap) ; //frameindex after instr
             break;
 
 		case 's':
-            pager = new SeconChance() ; //frameindex after instr
+            pager = new SeconChance( &flagbitmap) ; //frameindex after instr
             break;
 
 		case 'r':
-            pager = new Random(&rand, framenum ) ;
+            pager = new Random( framenum , &rand, &flagbitmap) ;
             break;
         case 'c': //clock_c
-            pager = new Clock_c(framenum);
+            pager = new Clock_c(framenum, &flagbitmap);
             break;
         case 'X': //clock_c
-            pager = new Clock_X(framenum, &ptable);
+            pager = new Clock_X(framenum, &ptable, &flagbitmap);
+            break;
+        case 'N': 
+            pager = new NRU(framenum, &ptable, &rand, &flagbitmap);
             break;
 	}
     // Pager* pager = new FIFO() ; //frameindex after instr

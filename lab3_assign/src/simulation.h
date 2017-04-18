@@ -26,8 +26,8 @@ struct stat{
 
 int Frame::firstFreeInd = 0;
 
-int Clock_c::hand = 0;
-int Clock_X::hand = 0;
+// int Clock_c::hand = 0;
+// int Clock_X::hand = 0;
 
 //ordered vector of frame
 
@@ -45,6 +45,9 @@ void printOrderedPageInd(vector<int>& ftable_ordered,int framenum);
 void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
         int framenum, vector<Frame* >&  ftable , vector<int>& ftable_ordered){
 
+map<char, bool>  flagbitmap ;
+pager->get_flagbitmapRef(flagbitmap);
+
 	int rw,  pageindex, instrind = 0;
 	const char outform[20] = "%d: %-5s%4d%4d\n";
 	while(get_next_instr(infile, rw, pageindex, instrind))
@@ -53,7 +56,7 @@ void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
 
 		newpte->ref = 1; //has to be 1
 
-		if(! newpte->present ){ // now not in frame table, need new frame to load the page
+		if( (!newpte->present) && flagbitmap['O'] ){ // now not in frame table, need new frame to load the page
 
 			//test whether pte is present , if yes read next instruction
 			Frame *oldframe , *newframe ;
@@ -109,9 +112,15 @@ void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
         }else{
             // newpte->mod = 0; //not change the mod
         }
-		printPageTable(ptable);
-		cout<< endl;
-		printOrderedPageInd(ftable_ordered, framenum);  pager->printFrameInfoPager(ftable) ; cout<<endl;
+		//print ptable after each instruction
+		if(flagbitmap['p']) {	printPageTable(ptable);cout<< endl; }
+		
+		if(flagbitmap['f']) {   
+			printOrderedPageInd(ftable_ordered, framenum);  
+			pager->printFrameInfoPager(ftable) ; //with || extrainfo
+			cout<<endl; 
+			
+		}
 
 		//option p f
 
@@ -124,11 +133,16 @@ void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
         3000*(stats.ins+stats.outs) + 150*(stats.zeros) + instrind;
 
 
-	printPageTable(ptable); cout<<endl;
-    printOrderedPageInd(ftable_ordered, framenum);    cout<<endl;
+	if(flagbitmap['P']) { printPageTable(ptable);}
+	cout<<endl;
 
+    if(flagbitmap['F']) { printOrderedPageInd(ftable_ordered, framenum);}
+	cout<<endl;
+
+	if(flagbitmap['S']) { 
 	printf("SUM %d U=%d M=%d I=%d O=%d Z=%d ===> %llu\n",
 		instrind, stats.unmaps, stats.maps, stats.ins, stats.outs, stats.zeros, stats.totalcost);
+	}
 }
 
 Frame* get_frame( Pager* pager, int framenum,  vector<Frame* >& ftable ) {
