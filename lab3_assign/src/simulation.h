@@ -32,7 +32,7 @@ int Frame::firstFreeInd = 0;
 //ordered vector of frame
 
 
-bool get_next_instr(ifstream& infile, int& rw, int& pageindex, int& instrind);
+bool get_next_instr(ifstream& infile, int& rw, int& pageindex, int& instrind, bool printO);
 Frame* get_frame( Pager* pager, int framenum,  vector<Frame* >& ftable );
 Frame* allocate_frame_from_free_list(int framenum, vector<Frame* >&  ftable);
 
@@ -47,16 +47,17 @@ void simulation(Pager* pager, ifstream& infile,vector<PTE*>& ptable,
 
 map<char, bool>  flagbitmap ;
 pager->get_flagbitmapRef(flagbitmap);
+bool printO = flagbitmap['O'];
 
 	int rw,  pageindex, instrind = 0;
 	const char outform[20] = "%d: %-5s%4d%4d\n";
-	while(get_next_instr(infile, rw, pageindex, instrind))
+	while(get_next_instr(infile, rw, pageindex, instrind, printO))
 	{
 		PTE* newpte = ptable[pageindex] ;
 
 		newpte->ref = 1; //has to be 1
 
-		if( (!newpte->present) && flagbitmap['O'] ){ // now not in frame table, need new frame to load the page
+		if( !newpte->present  ){ // now not in frame table, need new frame to load the page
 
 			//test whether pte is present , if yes read next instruction
 			Frame *oldframe , *newframe ;
@@ -65,13 +66,13 @@ pager->get_flagbitmapRef(flagbitmap);
 
 			PTE* oldpte = newframe-> pageptr ; //has a PTE in the frame
 			if(oldpte != NULL){
-				printf(outform , instrind,"UNMAP", oldpte->pageind, newframe->frameind);
+				if(printO)  printf(outform , instrind,"UNMAP", oldpte->pageind, newframe->frameind);
                 stats.unmaps++;
 				oldpte-> present = 0; //no longer present in frame
 				oldpte-> ref = 0;
 				if(oldpte->mod) {
 					oldpte-> pageout = 1;
-					printf(outform , instrind,"OUT",oldpte->pageind, newframe->frameind);
+					if(printO)  printf(outform , instrind,"OUT",oldpte->pageind, newframe->frameind);
                     stats.outs++;
 				}
 				//process oldpte, modified? if pageout = 1, frameind reset to be -1
@@ -79,17 +80,17 @@ pager->get_flagbitmapRef(flagbitmap);
 
 			//if newpte pageout
 			if(newpte->pageout){
-				printf(outform , instrind,"IN", newpte->pageind, newframe->frameind);
+				if(printO)  printf(outform , instrind,"IN", newpte->pageind, newframe->frameind);
                 //after page in the has-been-modified page, mod = 0
                 newpte->mod  = 0;
                 //newpte->pageout = 0;//still keep pageout
                 stats.ins++;
 			}
 			else{
-				printf("%d: %-9s%4d\n",  instrind,"ZERO", newframe->frameind);
+				if(printO)  printf("%d: %-9s%4d\n",  instrind,"ZERO", newframe->frameind);
 			    stats.zeros++;
             }
-			printf(outform , instrind,"MAP", newpte->pageind, newframe->frameind);
+			if(printO)  printf(outform , instrind,"MAP", newpte->pageind, newframe->frameind);
             stats.maps++;
 
             //change newpte flagbit
@@ -113,7 +114,7 @@ pager->get_flagbitmapRef(flagbitmap);
             // newpte->mod = 0; //not change the mod
         }
 		//print ptable after each instruction
-		if(flagbitmap['p']) {	printPageTable(ptable);cout<< endl; }
+		if(flagbitmap['p']) {	printPageTable(ptable);  cout<< endl; }
 		
 		if(flagbitmap['f']) {   
 			printOrderedPageInd(ftable_ordered, framenum);  
@@ -163,7 +164,7 @@ Frame* allocate_frame_from_free_list(int framenum, vector<Frame* >&  ftable){
 	}
 }
 
-bool get_next_instr(ifstream& infile, int& rw, int& pageindex , int& instrind){
+bool get_next_instr(ifstream& infile, int& rw, int& pageindex , int& instrind, bool printO){
 	string line;  // store the line that not start with #
 	stringstream linestream;
 	while ( getline(infile, line)  ){
@@ -174,7 +175,7 @@ bool get_next_instr(ifstream& infile, int& rw, int& pageindex , int& instrind){
 		linestream.clear();
 		linestream<< line;
 		linestream>> rw >> pageindex;
-		printf( "==> inst: %d %d\n",rw , pageindex );
+		if(printO)  printf( "==> inst: %d %d\n",rw , pageindex );
 
 		return true;
 	}
