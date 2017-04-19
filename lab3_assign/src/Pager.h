@@ -19,11 +19,11 @@ class Pager{
 	virtual Frame* allocate_frame(vector<Frame* >& ftable ){   }
 
 	virtual void printFrameInfoPager(vector<Frame* >&  ftable){ //for FIFO printing frame index 
-		cout<< " || ";
+		cout<< " ||";
 		for (unsigned i = 0; i<ftable.size(); i++)
 		{
 			if( ftable[i]->pageptr != NULL ){
-				cout<< ftable[i]->frameind <<" " ;
+				cout<<" "<< ftable[i]->frameind  ;
 			}
 		}
 
@@ -299,18 +299,18 @@ class Aging_a : public Pager{
         }
         int ret_ind = min_aging(ftable) ;
         ret_frame = ftable[ret_ind] ;
-        //this frame's aging should be 0
+        //ret_frame's aging should be 0
         ret_frame->aging = 0;
         return ret_frame ;
     }
     void printFrameInfoPager(vector<Frame* >&  ftable){
-        cout<< " || ";
+        cout<< " ||";
         map<char, bool>&  flagbitmap = *flagbitmap_ptr;
         // need print physical frame aging information
         for (int i = 0; i< ftable.size(); i++){
             if (ftable[i]->pageptr !=NULL)
             {
-                printf( "%d:%x ", i, ftable[i]->aging );
+                printf( " %d:%x", i, ftable[i]->aging );
             }
         }
     }
@@ -322,6 +322,94 @@ class Aging_a : public Pager{
             }
         }
         return min_ind;
+
+    }
+};
+
+class Aging_Y : public Pager{
+    private:
+    int framenum;
+    vector<PTE*>* ptable_ptr;
+    unsigned int REF_DELTA;
+    int min_page_ind , min_frame_ind;
+
+    public: 
+    int counter_size;
+    vector<unsigned int> counter ;
+	Aging_Y (int frnum ,  vector<PTE*>* in_ptable_ptr, map<char, bool>* in_flagbitmap_ptr):Pager(in_flagbitmap_ptr){
+        mode = "Y";
+        framenum = frnum;
+        ptable_ptr = in_ptable_ptr ;
+        min_page_ind = -1;
+        min_frame_ind = -1;
+        REF_DELTA  = 0x80000000 ;
+        // cout<<flagbitmap['a']<<"~~~aging"<<endl;
+    }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+        vector<PTE*>& ptable = *ptable_ptr ;
+        map<char, bool>&  flagbitmap = *flagbitmap_ptr;
+        Frame* ret_frame  ;
+
+        const char aging_info[30] = " @@ min_pte = %d age=%x" ; //after execute instr aging info 
+
+        // first shift right and then make plus Ox80000000 operation by ref bit
+        for ( int i = 0; i< ptable.size() ;i++ )
+        {
+            if( ptable[i]->present ){
+
+                int findex = ptable[i]->frameind ;
+                ftable[ findex ]->aging >>= 1; //first shift then plus
+                if (ptable[i]->ref){
+                    ftable[findex]->aging += REF_DELTA ;
+                    ptable[i]->ref = 0; //clear ref bit
+                } 
+            }
+        }
+        int ret_ind = min_aging(ftable) ;
+        ret_frame = ftable[ret_ind] ;
+        //ret_frame's aging should be 0
+        ret_frame->aging = 0;
+        return ret_frame ;
+    }
+    void printFrameInfoPager(vector<Frame* >&  ftable){
+        cout<< " ||";
+        vector<PTE*>& ptable = *ptable_ptr ;
+        map<char, bool>&  flagbitmap = *flagbitmap_ptr;
+        // need print physical frame aging information
+        printPageAging(ftable) ;
+    }
+    void printPageAging (vector<Frame* >&  ftable){
+        vector<PTE*>& ptable = *ptable_ptr ;
+        for (int i = 0; i< ptable.size(); i++){
+            if ( ptable[i]->present )
+            {
+                int findex = ptable[i]->frameind ;
+                printf( " %d:%x", i, ftable[findex]->aging );
+            }else{
+                cout<< " *" ;
+            }
+        }
+    }
+    int min_aging(vector<Frame* >& ftable ){
+        min_page_ind = -1; //first set to -1, to start with the first present page's aging
+        vector<PTE*>& ptable = *ptable_ptr ;
+        for(int i = 0 ;i<ptable.size(); i++){
+
+            if(ptable[i]->present){
+                int findex = ptable[i]->frameind ;
+                if(min_page_ind == -1) { 
+                    min_page_ind = i ;  
+                    min_frame_ind = findex;
+                    continue;
+                }      
+                if(ftable[min_frame_ind]->aging > ftable[findex]->aging){
+                    min_page_ind = i;
+                    min_frame_ind = findex ;
+                }
+            }
+
+        }
+        return min_frame_ind;
 
     }
 };

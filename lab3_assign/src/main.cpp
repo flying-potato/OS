@@ -127,6 +127,8 @@ int main( int argc, char* argv[] )
             break;
 		case 'a':
 			pager = new Aging_a (framenum ,&flagbitmap);
+		case 'Y':
+			pager = new Aging_Y (framenum ,  &ptable, &flagbitmap);
 	}
     // Pager* pager = new FIFO() ; //frameindex after instr
     // Pager* pager = new SeconChance() ; //frameindex after instr
