@@ -104,6 +104,7 @@ int main( int argc, char* argv[] )
     }
     randfile.close();
     Pager* pager;
+	// cout<< "ALGO : "<<algo<<endl;
 	switch(algo){
 		case 'f':
             pager = new FIFO( &flagbitmap) ; //frameindex after instr
@@ -126,9 +127,11 @@ int main( int argc, char* argv[] )
             pager = new NRU(framenum, &ptable, &rand, &flagbitmap);
             break;
 		case 'a':
-			pager = new Aging_a (framenum ,&flagbitmap);
+			pager = new Aging_a (framenum , &flagbitmap);
+			break;
 		case 'Y':
 			pager = new Aging_Y (framenum ,  &ptable, &flagbitmap);
+			break;
 	}
     // Pager* pager = new FIFO() ; //frameindex after instr
     // Pager* pager = new SeconChance() ; //frameindex after instr

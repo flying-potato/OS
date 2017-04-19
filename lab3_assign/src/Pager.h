@@ -19,11 +19,11 @@ class Pager{
 	virtual Frame* allocate_frame(vector<Frame* >& ftable ){   }
 
 	virtual void printFrameInfoPager(vector<Frame* >&  ftable){ //for FIFO printing frame index 
-		cout<< " ||";
+		cout<< " || ";
 		for (unsigned i = 0; i<ftable.size(); i++)
 		{
 			if( ftable[i]->pageptr != NULL ){
-				cout<<" "<< ftable[i]->frameind  ;
+                printf("%d ", ftable[i]->frameind );
 			}
 		}
 
@@ -32,7 +32,7 @@ class Pager{
     void get_flagbitmapRef(map<char, bool>& flagbitmap){
         flagbitmap = *flagbitmap_ptr;
     }
-
+    virtual int min_aging(vector<Frame* >& ftable ){}
 	virtual ~Pager(){} //delete[]
 };
 
@@ -109,7 +109,7 @@ class Clock_c: public Pager{
         mode = "c";
         //rand_ptr = in_rand_ptr;
         framenum = frnum;
-
+        hand = 0;
     }
 	Frame* allocate_frame(vector<Frame* >& ftable ){
         map<char, bool>&  flagbitmap = *flagbitmap_ptr;
@@ -145,6 +145,7 @@ class Clock_X: public Pager{
         framenum = frnum;
         ptable_ptr = in_ptable_ptr ;
         //rand_ptr = in_rand_ptr;
+        hand = 0;
 
     }
 	Frame* allocate_frame(vector<Frame* >& ftable ){
@@ -190,7 +191,6 @@ class NRU : public Pager
     int selclass,  selidx ;
     int clock ; //10 cycle reset ref bit
 	public:
-    static int hand;
 	NRU (int frnum , vector<PTE*>* in_ptable_ptr, vector<int>* in_rand_ptr, map<char, bool>* in_flagbitmap_ptr):Pager(in_flagbitmap_ptr){
         selclass = 0;
         selidx= 0 ;
@@ -265,21 +265,18 @@ class NRU : public Pager
     void printFrameInfoPager(vector<Frame* >&  ftable){}
 };
 
-class Aging_a : public Pager{
+class Aging_a : public Pager{ //physical Frames aging
     private:
     int framenum;
-    // vector<PTE*>* ptable_ptr;
-    // vector<int>* rand_ptr;
+    int min_ind;
     unsigned int REF_DELTA;
 
-
     public: 
-    int counter_size;
     vector<unsigned int> counter ;
 	Aging_a (int frnum , map<char, bool>* in_flagbitmap_ptr):Pager(in_flagbitmap_ptr){
         mode = "a";
         framenum = frnum;
-        counter_size = framenum;
+        min_ind = -1;
         REF_DELTA  = 0x80000000 ;
         
         // cout<<flagbitmap['a']<<"~~~aging"<<endl;
@@ -303,22 +300,29 @@ class Aging_a : public Pager{
         ret_frame->aging = 0;
         return ret_frame ;
     }
-    void printFrameInfoPager(vector<Frame* >&  ftable){
-        cout<< " ||";
-        map<char, bool>&  flagbitmap = *flagbitmap_ptr;
+
+    void printFrameInfoPager(vector<Frame* >& ftable){
+        cout<< " || ";
         // need print physical frame aging information
         for (int i = 0; i< ftable.size(); i++){
             if (ftable[i]->pageptr !=NULL)
             {
-                printf( " %d:%x", i, ftable[i]->aging );
+                printf( "%d:%x ", i, ftable[i]->aging );
             }
         }
     }
+
     int min_aging(vector<Frame* >& ftable ){
-        int min_ind = 0;
+        min_ind = -1;
         for(int i = 0 ;i<ftable.size(); i++){
-            if(ftable[min_ind]->aging > ftable[i]->aging){
-                min_ind = i ;
+            if( ftable[i]->pageptr->present ){
+                if (min_ind == -1){
+                    min_ind = i;
+                    continue;
+                } 
+                if(ftable[min_ind]->aging > ftable[i]->aging){
+                    min_ind = i ;
+                }
             }
         }
         return min_ind;
@@ -372,7 +376,7 @@ class Aging_Y : public Pager{
         return ret_frame ;
     }
     void printFrameInfoPager(vector<Frame* >&  ftable){
-        cout<< " ||";
+        cout<< " ||"; 
         vector<PTE*>& ptable = *ptable_ptr ;
         map<char, bool>&  flagbitmap = *flagbitmap_ptr;
         // need print physical frame aging information
