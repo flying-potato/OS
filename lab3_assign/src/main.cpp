@@ -125,6 +125,8 @@ int main( int argc, char* argv[] )
         case 'N': 
             pager = new NRU(framenum, &ptable, &rand, &flagbitmap);
             break;
+		case 'a':
+			pager = new Aging_a (framenum ,&flagbitmap);
 	}
     // Pager* pager = new FIFO() ; //frameindex after instr
     // Pager* pager = new SeconChance() ; //frameindex after instr

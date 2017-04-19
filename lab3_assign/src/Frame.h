@@ -11,9 +11,9 @@ struct Frame{
 	static int firstFreeInd ;
     int frameind ;
 	unsigned int haspage:1;
-
+	unsigned int aging ;
 	PTE* pageptr ; //get all info PTE
-	Frame(int in_frameind): frameind(in_frameind), haspage(0) ,pageptr(NULL) {}
+	Frame(int in_frameind): frameind(in_frameind), haspage(0) ,pageptr(NULL) ,aging(0){}
 };
 
 #endif

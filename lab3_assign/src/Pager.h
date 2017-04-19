@@ -1,6 +1,7 @@
 #ifndef __PAGER__
 #define __PAGER__
 
+#include <iostream>
 #include "PTE.h"
 #include "Pager.h"
 #include "Frame.h"
@@ -17,7 +18,7 @@ class Pager{
 	Pager( map<char, bool>* in_flagbitmap_ptr ):flagbitmap_ptr(in_flagbitmap_ptr) { }
 	virtual Frame* allocate_frame(vector<Frame* >& ftable ){   }
 
-	virtual void printFrameInfoPager(vector<Frame* >&  ftable){
+	virtual void printFrameInfoPager(vector<Frame* >&  ftable){ //for FIFO printing frame index 
 		cout<< " || ";
 		for (unsigned i = 0; i<ftable.size(); i++)
 		{
@@ -264,5 +265,65 @@ class NRU : public Pager
     void printFrameInfoPager(vector<Frame* >&  ftable){}
 };
 
+class Aging_a : public Pager{
+    private:
+    int framenum;
+    // vector<PTE*>* ptable_ptr;
+    // vector<int>* rand_ptr;
+    unsigned int REF_DELTA;
+
+
+    public: 
+    int counter_size;
+    vector<unsigned int> counter ;
+	Aging_a (int frnum , map<char, bool>* in_flagbitmap_ptr):Pager(in_flagbitmap_ptr){
+        mode = "a";
+        framenum = frnum;
+        counter_size = framenum;
+        REF_DELTA  = 0x80000000 ;
+        
+        // cout<<flagbitmap['a']<<"~~~aging"<<endl;
+    }
+	Frame* allocate_frame(vector<Frame* >& ftable ){
+        
+        map<char, bool>&  flagbitmap = *flagbitmap_ptr;
+        Frame* ret_frame  ;
+        // first shift right and then make plus Ox80000000 operation by ref bit
+        for ( int i = 0; i< ftable.size() ;i++ )
+        {
+            ftable[i]->aging >>= 1; //first shift then plus
+            if (ftable[i]->pageptr->ref){
+                ftable[i]->aging += REF_DELTA ;
+                ftable[i]->pageptr->ref = 0; //clear ref bit
+            } 
+        }
+        int ret_ind = min_aging(ftable) ;
+        ret_frame = ftable[ret_ind] ;
+        //this frame's aging should be 0
+        ret_frame->aging = 0;
+        return ret_frame ;
+    }
+    void printFrameInfoPager(vector<Frame* >&  ftable){
+        cout<< " || ";
+        map<char, bool>&  flagbitmap = *flagbitmap_ptr;
+        // need print physical frame aging information
+        for (int i = 0; i< ftable.size(); i++){
+            if (ftable[i]->pageptr !=NULL)
+            {
+                printf( "%d:%x ", i, ftable[i]->aging );
+            }
+        }
+    }
+    int min_aging(vector<Frame* >& ftable ){
+        int min_ind = 0;
+        for(int i = 0 ;i<ftable.size(); i++){
+            if(ftable[min_ind]->aging > ftable[i]->aging){
+                min_ind = i ;
+            }
+        }
+        return min_ind;
+
+    }
+};
 
 #endif
